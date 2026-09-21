@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>离散序列变换动画</title>
+<style>
+*{box-sizing:border-box}
+html,body{
+  margin:0;width:100%;height:100%;
+  background:#eef4fa;
+  font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif;
+  color:#263a56;
+}
+body{
+  display:flex;align-items:center;justify-content:center;
+  padding:10px;overflow:hidden;
+}
+.舞台{
+  width:min(98vw,1600px);
+  aspect-ratio:16/9;
+  max-height:96vh;
+  background:#fbfdff;
+  border:1px solid #dce6f0;
+  border-radius:22px;
+  box-shadow:0 18px 48px rgba(55,80,110,.10);
+  padding:13px;
+  display:grid;
+  grid-template-rows:auto auto 1fr auto;
+  gap:9px;
+  overflow:hidden;
+}
+.顶部{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;
+}
+.标题{
+  font-size:clamp(20px,2vw,32px);
+  font-weight:800;
+  color:#293e5b;
+}
+.目标式{
+  font-size:clamp(16px,1.35vw,23px);
+  font-weight:700;
+  padding:7px 12px;
+  border-radius:11px;
+  background:#f2f7fc;
+  border:1px solid #e1eaf4;
+  color:#456384;
+}
+.导航{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:#f5f9fd;
+  border:1px solid #e1eaf3;
+  border-radius:14px;
+  padding:7px;
+}
+.方法按钮,.方案按钮,.控制按钮{
+  border:1px solid #dbe5ef;
+  background:#fff;
+  color:#526781;
+  border-radius:9px;
+  padding:7px 11px;
+  font:inherit;
+  cursor:pointer;
+  transition:.14s ease;
+}
+.方法按钮:hover,.方案按钮:hover,.控制按钮:hover{
+  transform:translateY(-1px);
+  box-shadow:0 5px 12px rgba(60,90,120,.10);
+}
+.方法按钮.选中{
+  background:#e8f1ff;
+  border-color:#bfd5f3;
+  color:#2f5f9e;
+  font-weight:700;
+}
+.方案区{
+  display:flex;align-items:center;gap:5px;
+  padding-left:7px;
+  border-left:1px solid #dce5ee;
+}
+.方案标签{font-size:13px;color:#71849b;margin-right:2px}
+.方案按钮{
+  min-width:36px;
+  padding:6px 9px;
+  font-size:13px;
+}
+.方案按钮.选中{
+  background:#fff1e5;
+  border-color:#efc99f;
+  color:#a66122;
+  font-weight:700;
+}
+.主屏幕{
+  min-height:0;
+  background:#fff;
+  border:1px solid #e0e8f1;
+  border-radius:17px;
+  overflow:hidden;
+  position:relative;
+}
+#主图{display:block;width:100%;height:100%}
+.底部{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;align-items:center;
+}
+.步骤条{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:7px;min-width:0;
+}
+.步骤点{
+  min-width:0;
+  padding:7px 6px;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  border:1px solid #e0e8f1;
+  border-radius:10px;
+  background:#f8fbfe;
+  color:#75879d;
+  font-size:12px;
+}
+.步骤点.完成{
+  background:#eef8f2;
+  border-color:#d4eadc;
+  color:#4d7b60;
+}
+.步骤点.当前{
+  background:#fff3e8;
+  border-color:#efcda9;
+  color:#a55d1a;
+  font-weight:700;
+}
+.控制区{
+  display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap;
+}
+.速度组{
+  display:flex;align-items:center;gap:6px;
+  background:#f6f9fc;border:1px solid #e2eaf2;
+  border-radius:10px;padding:5px 8px;
+}
+.速度组 span{font-size:12px;color:#64778d;white-space:nowrap}
+input[type="range"]{width:105px;cursor:pointer}
+@media(max-width:1000px){
+  body{overflow:auto}
+  .舞台{aspect-ratio:auto;height:96vh}
+  .底部{grid-template-columns:1fr}
+  .控制区{justify-content:center}
+}
+</style>
+</head>
+<body>
+<div class="舞台">
+  <div class="顶部">
+    <div class="标题">离散序列变换</div>
+    <div class="目标式">x[n] = {1,2,3,4,5,6,7}　→　x[-3n+3]</div>
+  </div>
+
+  <div class="导航">
+    <button class="方法按钮 选中" data-method="变换">变换分解法</button>
+    <button class="方法按钮" data-method="映射">下标映射法</button>
+    <button class="方法按钮" data-method="定义">定义域判定法</button>
+
+    <div class="方案区" id="方案区">
+      <span class="方案标签">顺序方案</span>
+      <button class="方案按钮 选中" data-plan="0">1</button>
+      <button class="方案按钮" data-plan="1">2</button>
+      <button class="方案按钮" data-plan="2">3</button>
+      <button class="方案按钮" data-plan="3">4</button>
+      <button class="方案按钮" data-plan="4">5</button>
+      <button class="方案按钮" data-plan="5">6</button>
+    </div>
+  </div>
+
+  <div class="主屏幕">
+    <svg id="主图" viewBox="0 0 1500 650" preserveAspectRatio="xMidYMid meet"></svg>
+  </div>
+
+  <div class="底部">
+    <div class="步骤条" id="步骤条"></div>
+    <div class="控制区">
+      <div class="速度组">
+        <span>速度</span>
+        <input id="速度" type="range" min="40" max="240" value="100">
+        <span id="速度值">1.00 倍</span>
+      </div>
+      <button class="控制按钮" id="上一步">上一步</button>
+      <button class="控制按钮" id="播放">自动播放</button>
+      <button class="控制按钮" id="下一步">下一步</button>
+      <button class="控制按钮" id="重置">重置</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const svg = document.getElementById("主图");
+  const 步骤条 = document.getElementById("步骤条");
+  const 方案区 = document.getElementById("方案区");
+  const 速度 = document.getElementById("速度");
+  const 速度值 = document.getElementById("速度值");
+  const 播放按钮 = document.getElementById("播放");
+
+  const 源序列 = [1,2,3,4,5,6,7];
+
+  const 色 = {
+    蓝:"#4f79d8", 橙:"#ee9a43", 绿:"#43a76b", 红:"#df5c61",
+    紫:"#8a6dd0", 深:"#2b405e", 中:"#60758e", 浅:"#dfe7f0",
+    网格:"#edf2f7", 淡蓝:"#eef5ff", 淡橙:"#fff3e7",
+    淡绿:"#edf8f1", 淡紫:"#f4f0ff", 灰:"#a9b6c5"
+  };
+
+  const 方案 = [
+    {
+      名称:"镜像 → 3倍抽取 → 右移1",
+      简称:["原序列","关于0镜像","3倍抽取","右移1"],
+      阶段:[
+        {a:1,b:0,式:"x[n]",题:"原序列 x[n] = {1,2,3,4,5,6,7}",细:"默认下标从 n=0 到 n=6：x[0]=1，x[1]=2，…，x[6]=7"},
+        {a:-1,b:0,式:"x[-n]",题:"第一步：关于 n=0 镜像",细:"镜像中心是 n=0。位置 0，1，…，6 翻到 0，-1，…，-6；对应幅值依次变成 1，2，…，7"},
+        {a:-3,b:0,式:"x[-3n]",题:"第二步：3倍抽取（时间压缩）",细:"从 x[-n] 中只保留当前下标为 0，-3，-6 的样本；对应新下标 n=0，-1，-2，幅值为 1，4，7"},
+        {a:-3,b:3,式:"x[-3(n-1)] = x[-3n+3]",题:"第三步：整体右移 1",细:"把 x[-3n] 全部向右移动 1 格：位置 -2，-1，0 变成 -1，0，1；幅值保持 7，4，1"}
+      ]
+    },
+    {
+      名称:"3倍抽取 → 镜像 → 右移1",
+      简称:["原序列","3倍抽取","关于0镜像","右移1"],
+      阶段:[
+        {a:1,b:0,式:"x[n]",题:"原序列 x[n] = {1,2,3,4,5,6,7}",细:"默认下标从 n=0 到 n=6：x[0]=1，x[1]=2，…，x[6]=7"},
+        {a:3,b:0,式:"x[3n]",题:"第一步：3倍抽取（时间压缩）",细:"只保留原序列下标 0，3，6，所以新序列在 n=0，1，2 处的幅值分别是 1，4，7"},
+        {a:-3,b:0,式:"x[-3n]",题:"第二步：关于 n=0 镜像",细:"镜像中心是 n=0。位置 0，1，2 翻到 0，-1，-2；因此从左到右看到的幅值变成 7，4，1"},
+        {a:-3,b:3,式:"x[-3(n-1)] = x[-3n+3]",题:"第三步：整体右移 1",细:"把位置 -2，-1，0 全部右移 1 格，得到 -1，0，1；幅值仍是 7，4，1"}
+      ]
+    },
+    {
+      名称:"镜像 → 右移3 → 3倍抽取",
+      简称:["原序列","关于0镜像","右移3","3倍抽取"],
+      阶段:[
+        {a:1,b:0,式:"x[n]",题:"原序列 x[n] = {1,2,3,4,5,6,7}",细:"默认下标从 n=0 到 n=6：x[0]=1，x[1]=2，…，x[6]=7"},
+        {a:-1,b:0,式:"x[-n]",题:"第一步：关于 n=0 镜像",细:"镜像中心为 n=0。位置 0…6 变为 0…-6，幅值按镜像后的下标顺序排列"},
+        {a:-1,b:3,式:"x[-n+3]",题:"第二步：整体右移 3",细:"把 x[-n] 向右移动 3 格，位置区间从 -6…0 变成 -3…3。等效地，相对原序列也可理解为关于 n=3/2 镜像"},
+        {a:-3,b:3,式:"x[-3n+3]",题:"第三步：3倍抽取（时间压缩）",细:"从当前序列 x[-n+3] 中只保留下标 -3，0，3，所以新下标 n=-1，0，1；幅值分别为 7，4，1"}
+      ]
+    },
+    {
+      名称:"3倍抽取 → 左移1 → 镜像",
+      简称:["原序列","3倍抽取","左移1","关于0镜像"],
+      阶段:[
+        {a:1,b:0,式:"x[n]",题:"原序列 x[n] = {1,2,3,4,5,6,7}",细:"默认下标从 n=0 到 n=6：x[0]=1，x[1]=2，…，x[6]=7"},
+        {a:3,b:0,式:"x[3n]",题:"第一步：3倍抽取（时间压缩）",细:"保留原下标 0，3，6，所以在新下标 n=0，1，2 上得到幅值 1，4，7"},
+        {a:3,b:3,式:"x[3n+3]",题:"第二步：整体左移 1",细:"因为 x[3(n+1)] = x[3n+3]，所以图形向左移动 1 格：位置 0，1，2 变成 -1，0，1；幅值还是 1，4，7"},
+        {a:-3,b:3,式:"x[-3n+3]",题:"第三步：关于 n=0 镜像",细:"镜像中心是 n=0。位置 -1，0，1 关于 0 对称，但幅值顺序会翻转：由 1，4，7 变为 7，4，1"}
+      ]
+    },
+    {
+      名称:"左移3 → 镜像 → 3倍抽取",
+      简称:["原序列","左移3","关于0镜像","3倍抽取"],
+      阶段:[
+        {a:1,b:0,式:"x[n]",题:"原序列 x[n] = {1,2,3,4,5,6,7}",细:"默认下标从 n=0 到 n=6：x[0]=1，x[1]=2，…，x[6]=7"},
+        {a:1,b:3,式:"x[n+3]",题:"第一步：整体左移 3",细:"自变量里是 n+3，所以图形左移 3 格：原来 0…6 的样本移动到 -3…3，幅值仍按 1 到 7 排列"},
+        {a:-1,b:3,式:"x[-n+3]",题:"第二步：关于 n=0 镜像",细:"镜像中心是 n=0。左移后的 -3…3 再关于 0 翻转；等效地，相对原序列也可理解为关于 n=3/2 镜像"},
+        {a:-3,b:3,式:"x[-3n+3]",题:"第三步：3倍抽取（时间压缩）",细:"只保留当前序列下标 -3，0，3，因此在新下标 -1，0，1 上得到幅值 7，4，1"}
+      ]
+    },
+    {
+      名称:"左移3 → 3倍抽取 → 镜像",
+      简称:["原序列","左移3","3倍抽取","关于0镜像"],
+      阶段:[
+        {a:1,b:0,式:"x[n]",题:"原序列 x[n] = {1,2,3,4,5,6,7}",细:"默认下标从 n=0 到 n=6：x[0]=1，x[1]=2，…，x[6]=7"},
+        {a:1,b:3,式:"x[n+3]",题:"第一步：整体左移 3",细:"自变量里是 n+3，所以图形向左移动 3 格，位置区间变成 -3 到 3"},
+        {a:3,b:3,式:"x[3n+3]",题:"第二步：3倍抽取（时间压缩）",细:"从 x[n+3] 中只保留当前下标 -3，0，3，因此在新下标 -1，0，1 上得到幅值 1，4，7"},
+        {a:-3,b:3,式:"x[-3n+3]",题:"第三步：关于 n=0 镜像",细:"镜像中心是 n=0。位置 -1，0，1 不变，但左右幅值交换：从 1，4，7 变成 7，4，1"}
+      ]
+    }
+  ];
+
+  const 方法配置 = {
+    映射:{步骤:["原序列","建立映射","筛选整数","得到结果"],总数:4},
+    定义:{步骤:["原定义域","代入变量","解不等式","得到结果"],总数:4}
+  };
+
+  let 当前方法="变换";
+  let 当前方案=0;
+  let 当前步骤=0;
+  let 自动=false;
+  let 定时器=null;
+
+  function 元素(tag,attrs={},text=""){
+    const e=document.createElementNS("http://www.w3.org/2000/svg",tag);
+    Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));
+    if(text!=="") e.textContent=text;
+    return e;
+  }
+  function 加(parent,tag,attrs={},text=""){
+    const e=元素(tag,attrs,text); parent.appendChild(e); return e;
+  }
+  function 清空(){while(svg.firstChild) svg.removeChild(svg.firstChild)}
+  function 文本(x,y,t,size=26,color=色.深,anchor="middle",weight=500){
+    return 加(svg,"text",{x,y,fill:color,"font-size":size,"font-weight":weight,
+      "text-anchor":anchor,"dominant-baseline":"middle"},t);
+  }
+  function 框(x,y,w,h,fill="#fff",stroke="#e1e8f1",r=16){
+    return 加(svg,"rect",{x,y,width:w,height:h,rx:r,fill,stroke,"stroke-width":1.5});
+  }
+  function 箭头(x1,y1,x2,y2,color=色.中,width=3){
+    加(svg,"line",{x1,y1,x2,y2,stroke:color,"stroke-width":width,"stroke-linecap":"round"});
+    const a=Math.atan2(y2-y1,x2-x1),L=12;
+    const p1=[x2-L*Math.cos(a-Math.PI/6),y2-L*Math.sin(a-Math.PI/6)];
+    const p2=[x2-L*Math.cos(a+Math.PI/6),y2-L*Math.sin(a+Math.PI/6)];
+    加(svg,"polygon",{points:`${x2},${y2} ${p1[0]},${p1[1]} ${p2[0]},${p2[1]}`,fill:color});
+  }
+
+  function 根据仿射取点(a,b){
+    const pts=[];
+    for(let n=-14;n<=14;n++){
+      const k=a*n+b;
+      if(Number.isInteger(k) && k>=0 && k<=6){
+        pts.push({n,v:源序列[k],k});
+      }
+    }
+    return pts.sort((p,q)=>p.n-q.n);
+  }
+
+  function 数组转式(arr){
+    return arr.map(v=>String(v)).join("，");
+  }
+
+  function 画坐标({点=[],标题="",横最小=-7,横最大=8,主色=色.蓝,镜像轴=null,标源下标=false}){
+    const x=78,y=198,w=1344,h=355;
+    框(x,y,w,h,"#fff","#e1e8f1",18);
+    文本(x+24,y+28,标题,23,色.深,"start",700);
+
+    const 左=x+75,右=x+w-35,上=y+82,下=y+h-45;
+    const 轴Y=下-8;
+    const 最大值=Math.max(1,...点.map(p=>Math.abs(p.v)));
+    const 顶部留白=8;
+    const usable = (轴Y - 上 - 顶部留白);
+    const mapX=n=>左+(n-横最小)/(横最大-横最小)*(右-左);
+    const mapY=v=>轴Y - v/(最大值*1.12)*usable;
+
+    for(let n=横最小;n<=横最大;n++){
+      const px=mapX(n);
+      加(svg,"line",{x1:px,y1:上,x2:px,y2:下,stroke:色.网格,"stroke-width":1});
+      文本(px,下+18,String(n),13,色.中);
+    }
+    加(svg,"line",{x1:左,y1:轴Y,x2:右,y2:轴Y,stroke:"#9fb0c3","stroke-width":2});
+
+    if(镜像轴!==null){
+      const ax=mapX(镜像轴);
+      加(svg,"line",{x1:ax,y1:上-6,x2:ax,y2:下,stroke:色.红,"stroke-width":2.2,"stroke-dasharray":"8 7"});
+      文本(ax+8,上+9,`镜像中心 n=${镜像轴}`,16,色.红,"start",700);
+    }
+
+    点.forEach(p=>{
+      const px=mapX(p.n), py=mapY(p.v);
+      加(svg,"line",{x1:px,y1:轴Y,x2:px,y2:py,stroke:主色,"stroke-width":4,"stroke-linecap":"round"});
+      加(svg,"circle",{cx:px,cy:py,r:6.5,fill:主色});
+      文本(px,py-18,String(p.v),14,主色,"middle",700);
+      if(标源下标){
+        文本(px,轴Y+28,`k=${p.k}`,12,色.灰,"middle",600);
+      }
+    });
+  }
+
+  function 顶部步骤(题,式,细){
+    文本(750,40,题,29,色.深,"middle",800);
+    框(220,68,1060,62,色.淡蓝,"#dce8f5",15);
+    文本(750,99,式,28,色.蓝,"middle",800);
+    文本(750,155,细,18,color=色.中,anchor="middle",weight=500);
+  }
+
+  function 画变换(){
+    const s=方案[当前方案].阶段[当前步骤];
+    顶部步骤(s.题,s.式,s.细);
+
+    let 镜像轴=null;
+    if(s.题.includes("关于 n=0 镜像")) 镜像轴=0;
+
+    const 点=根据仿射取点(s.a,s.b);
+    画坐标({
+      点,
+      标题:`方案 ${当前方案+1}：${方案[当前方案].名称}`,
+      主色:[色.蓝,色.橙,色.紫,色.绿][当前步骤],
+      镜像轴,
+      标源下标:true
+    });
+
+    if(当前步骤>0){
+      const prev=方案[当前方案].阶段[当前步骤-1];
+      const 标签 = s.题.includes("镜像") ? "镜像"
+        : s.题.includes("抽取") ? "3倍抽取"
+        : s.题.includes("左移") ? "左移"
+        : s.题.includes("右移") ? "右移"
+        : "";
+      框(565,582,370,44,当前步骤===3?色.淡绿:色.淡橙,"#e8d5bd",12);
+      文本(750,604,`上一步 ${prev.式}　→　本步执行：${标签}`,15,色.中,"middle",700);
+    }
+  }
+
+  function 画映射(){
+    if(当前步骤===0){
+      顶部步骤("第一步：原序列","x[n] = {1，2，3，4，5，6，7}","默认对应 n=0，1，2，3，4，5，6");
+      画坐标({点:根据仿射取点(1,0),标题:"原序列",主色:色.蓝,标源下标:true,横最小:-3,横最大:8});
+      return;
+    }
+    if(当前步骤===1){
+      顶部步骤("第二步：建立下标映射","k = -3n + 3　⇔　n = (3-k)/3","这里 k 表示原序列 x[k] 的原始下标");
+      框(205,205,1090,330,色.淡蓝,"#d8e6f5",20);
+      文本(750,290,"k = -3n + 3",42,色.深,"middle",800);
+      箭头(750,330,750,395,色.蓝,4);
+      文本(750,450,"n = (3-k) / 3",42,色.深,"middle",800);
+      return;
+    }
+    if(当前步骤===2){
+      顶部步骤("第三步：只保留整数新下标","k=0，3，6 才得到整数 n","对应原样本值分别是 1，4，7；其余 k 会落到分数位置，不属于离散整数下标");
+      const data=[{k:0,n:"1",v:1,ok:1},{k:1,n:"2/3",v:2},{k:2,n:"1/3",v:3},{k:3,n:"0",v:4,ok:1},{k:4,n:"-1/3",v:5},{k:5,n:"-2/3",v:6},{k:6,n:"-1",v:7,ok:1}];
+      const sx=195,gap=185;
+      文本(105,258,"k",26,色.深,"middle",800);
+      文本(105,385,"x[k]",24,色.深,"middle",800);
+      文本(105,505,"n",26,色.深,"middle",800);
+      data.forEach((d,i)=>{
+        const px=sx+i*gap,fill=d.ok?色.淡绿:"#f7f9fb",st=d.ok?"#cce5d5":"#e2e8ef",c=d.ok?色.绿:色.中;
+        框(px-52,220,104,72,fill,st,13);文本(px,256,String(d.k),24,c,"middle",700);
+        框(px-52,348,104,72,fill,st,13);文本(px,384,String(d.v),22,c,"middle",700);
+        箭头(px,298,px,340,d.ok?色.绿:"#c5ced8",d.ok?4:2);
+        箭头(px,425,px,468,d.ok?色.绿:"#c5ced8",d.ok?4:2);
+        框(px-52,470,104,72,fill,st,13);文本(px,506,d.n,22,c,"middle",700);
+      });
+      return;
+    }
+    顶部步骤("第四步：得到结果","x[-3n+3]","有效下标为 n=-1，0，1，对应幅值为 7，4，1");
+    画坐标({点:根据仿射取点(-3,3),标题:"目标序列",主色:色.绿,标源下标:true});
+  }
+
+  function 画定义(){
+    if(当前步骤===0){
+      顶部步骤("第一步：写出原序列定义域","x[n] = {1，2，3，4，5，6，7}，定义在 0≤n≤6","也就是只有 n=0，1，2，3，4，5，6 这 7 个整数样本");
+      画坐标({点:根据仿射取点(1,0),标题:"原序列",主色:色.蓝,标源下标:true,横最小:-3,横最大:8});
+      return;
+    }
+    if(当前步骤===1){
+      顶部步骤("第二步：把新自变量代入原定义域","0 ≤ -3n+3 ≤ 6","只有当 -3n+3 落入原来的 0 到 6 时，目标序列才会有对应样本");
+      框(210,215,1080,300,色.淡橙,"#efdbc4",20);
+      文本(750,355,"0 ≤ -3n + 3 ≤ 6",48,色.深,"middle",800);
+      return;
+    }
+    if(当前步骤===2){
+      顶部步骤("第三步：解不等式","n≤1　且　n≥-1","合并得到 -1≤n≤1，并且 n 必须取整数");
+      框(150,220,540,270,色.淡蓝,"#dce8f5",18);
+      框(810,220,540,270,色.淡绿,"#d4e8dc",18);
+      文本(420,285,"0 ≤ -3n+3",31,色.深,"middle",800);
+      文本(420,390,"n ≤ 1",41,色.蓝,"middle",800);
+      文本(1080,285,"-3n+3 ≤ 6",31,色.深,"middle",800);
+      文本(1080,390,"n ≥ -1",41,色.绿,"middle",800);
+      文本(750,555,"所以整数解只有 n=-1，0，1",31,色.红,"middle",800);
+      return;
+    }
+    顶部步骤("第四步：代回求幅值","x[-3n+3]","n=-1 时取 x[6]=7，n=0 时取 x[3]=4，n=1 时取 x[0]=1");
+    画坐标({点:根据仿射取点(-3,3),标题:"目标序列",主色:色.绿,标源下标:true});
+  }
+
+  function 当前步骤名(){
+    if(当前方法==="变换") return 方案[当前方案].简称;
+    return 方法配置[当前方法].步骤;
+  }
+
+  function 渲染步骤条(){
+    步骤条.innerHTML="";
+    当前步骤名().forEach((name,i)=>{
+      const d=document.createElement("div");
+      d.className="步骤点";
+      if(i<当前步骤)d.classList.add("完成");
+      if(i===当前步骤)d.classList.add("当前");
+      d.textContent=`第 ${i+1} 步　${name}`;
+      步骤条.appendChild(d);
+    });
+  }
+
+  function 渲染(){
+    清空();
+    if(当前方法==="变换")画变换();
+    if(当前方法==="映射")画映射();
+    if(当前方法==="定义")画定义();
+    方案区.style.display=当前方法==="变换"?"flex":"none";
+    渲染步骤条();
+  }
+
+  function 停止自动(){
+    自动=false;播放按钮.textContent="自动播放";
+    if(定时器){clearTimeout(定时器);定时器=null}
+  }
+
+  function 安排(){
+    if(!自动)return;
+    const t=1500/(Number(速度.value)/100);
+    定时器=setTimeout(()=>{
+      if(当前步骤<3){
+        当前步骤++;
+        渲染();
+        安排();
+      }else{
+        停止自动();
+      }
+    },t);
+  }
+
+  document.querySelectorAll(".方法按钮").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      停止自动();
+      当前方法=btn.dataset.method;
+      当前步骤=0;
+      document.querySelectorAll(".方法按钮").forEach(b=>b.classList.remove("选中"));
+      btn.classList.add("选中");
+      渲染();
+    });
+  });
+
+  document.querySelectorAll(".方案按钮").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      停止自动();
+      当前方案=Number(btn.dataset.plan);
+      当前步骤=0;
+      document.querySelectorAll(".方案按钮").forEach(b=>b.classList.remove("选中"));
+      btn.classList.add("选中");
+      渲染();
+    });
+  });
+
+  document.getElementById("上一步").addEventListener("click",()=>{
+    停止自动();
+    当前步骤=Math.max(0,当前步骤-1);
+    渲染();
+  });
+
+  document.getElementById("下一步").addEventListener("click",()=>{
+    停止自动();
+    当前步骤=Math.min(3,当前步骤+1);
+    渲染();
+  });
+
+  document.getElementById("重置").addEventListener("click",()=>{
+    停止自动();
+    当前步骤=0;
+    渲染();
+  });
+
+  播放按钮.addEventListener("click",()=>{
+    if(自动){
+      停止自动();
+      return;
+    }
+    if(当前步骤===3){
+      当前步骤=0;
+      渲染();
+    }
+    自动=true;
+    播放按钮.textContent="暂停";
+    安排();
+  });
+
+  速度.addEventListener("input",()=>{
+    速度值.textContent=(Number(速度.value)/100).toFixed(2)+" 倍";
+    if(自动){
+      if(定时器) clearTimeout(定时器);
+      安排();
+    }
+  });
+
+  渲染();
+})();
+</script>
+</body>
+</html>
