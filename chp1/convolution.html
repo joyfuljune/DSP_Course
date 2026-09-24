@@ -3,1753 +3,525 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>离散线性卷积动画</title>
-
+<title>离散线性卷积动画 · 五图版</title>
+<!-- build: v10-bottom-right-x3-horizontal -->
 <style>
-*{
-    box-sizing:border-box;
+*{box-sizing:border-box}
+html,body{
+  margin:0;width:100%;min-height:100%;background:#eef5fb;
+  font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC",Arial,sans-serif;
+  color:#263a57;
 }
-
-html,
-body{
-    margin:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    background:#eef5fb;
-    font-family:
-        "Microsoft YaHei",
-        "PingFang SC",
-        "Noto Sans SC",
-        sans-serif;
-}
-
-body{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:12px;
-}
-
+body{padding:12px}
 .舞台{
-    width:min(96vw,1600px);
-    aspect-ratio:16 / 9;
-
-    background:#fbfdff;
-
-    border:1px solid #dfe8f3;
-    border-radius:22px;
-
-    box-shadow:
-        0 14px 36px rgba(40,70,110,.08);
-
-    padding:12px;
-
-    display:grid;
-    grid-template-rows:auto 1fr;
-    gap:10px;
+  width:min(98vw,1720px);min-height:calc(100vh - 24px);margin:0 auto;
+  background:#fbfdff;border:1px solid #dfe8f3;border-radius:22px;
+  box-shadow:0 14px 36px rgba(40,70,110,.08);
+  padding:14px;display:grid;grid-template-rows:auto 1fr;gap:12px;
 }
-
-
-/* =========================
-   顶部控制区域
-   ========================= */
-
 .控制区{
-    display:flex;
-    flex-wrap:wrap;
-
-    align-items:center;
-
-    gap:10px;
-
-    padding:9px 12px;
-
-    background:#f5f9fe;
-
-    border:1px solid #e3ecf6;
-    border-radius:16px;
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 12px;
+  background:#f5f9fe;border:1px solid #e3ecf6;border-radius:16px;
 }
-
 .控件{
-    display:flex;
-    align-items:center;
-
-    gap:8px;
-
-    min-height:42px;
-
-    padding:7px 10px;
-
-    background:#ffffff;
-
-    border:1px solid #e5edf7;
-    border-radius:12px;
+  display:flex;align-items:center;gap:8px;min-height:44px;padding:7px 10px;
+  background:#fff;border:1px solid #e5edf7;border-radius:12px;
 }
-
-.控件 label{
-    white-space:nowrap;
-
-    font-size:14px;
-
-    color:#48607f;
+.控件 label,.说明{white-space:nowrap;font-size:16px;color:#48607f}
+select,input,button{font:inherit}
+select,input[type="number"]{
+  padding:6px 9px;border:1px solid #d9e4f1;border-radius:8px;background:#fff;
+  color:#263a57;outline:none;font-size:16px;
 }
-
-select,
-input,
+input[type="number"]{width:76px}
+input[type="range"]{width:150px;cursor:pointer}
+.速度文字{min-width:64px;color:#263a57;font-size:16px}
+.按钮组{display:flex;flex-wrap:wrap;gap:8px}
 button{
-    font:inherit;
+  padding:8px 15px;border:none;border-radius:10px;background:#dceafe;color:#1d3b74;
+  cursor:pointer;font-size:16px;transition:transform .15s ease,background .15s ease,box-shadow .15s ease;
 }
+button:hover{transform:translateY(-1px);background:#cfe3ff;box-shadow:0 6px 14px rgba(80,120,190,.16)}
+button:active{transform:translateY(0)}
 
-select{
-    padding:5px 9px;
-
-    border:1px solid #d9e4f1;
-    border-radius:8px;
-
-    background:#ffffff;
-
-    color:#263a57;
-
-    outline:none;
-}
-
-input[type="range"]{
-    width:150px;
-    cursor:pointer;
-}
-
-.速度文字{
-    min-width:58px;
-
-    color:#536b88;
-
-    font-size:14px;
-}
-
-.按钮组{
-    display:flex;
-    flex-wrap:wrap;
-
-    gap:8px;
-}
-
-button{
-    padding:8px 14px;
-
-    border:none;
-    border-radius:10px;
-
-    background:#dceafe;
-
-    color:#1d3b74;
-
-    cursor:pointer;
-
-    transition:
-        transform .15s ease,
-        background .15s ease,
-        box-shadow .15s ease;
-}
-
-button:hover{
-    transform:translateY(-1px);
-
-    background:#cfe3ff;
-
-    box-shadow:
-        0 6px 14px rgba(80,120,190,.16);
-}
-
-button:active{
-    transform:translateY(0);
-}
-
-
-/* =========================
-   四个图像区域
-   ========================= */
-
+/* 上三、下二 */
 .图区{
-    min-height:0;
-
-    display:grid;
-
-    grid-template-columns:
-        1fr
-        1fr;
-
-    grid-template-rows:
-        1fr
-        1fr;
-
-    gap:10px;
+  min-height:0;display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  grid-template-rows:minmax(260px,1fr) minmax(300px,1.18fr);
+  gap:12px;
 }
-
 .面板{
-    min-width:0;
-    min-height:0;
-
-    overflow:hidden;
-
-    position:relative;
-
-    background:#ffffff;
-
-    border:1px solid #e1ebf5;
-    border-radius:16px;
+  min-width:0;min-height:0;overflow:hidden;position:relative;background:#fff;
+  border:1px solid #e1ebf5;border-radius:16px;
 }
+.上图{grid-column:span 2}
+.下图{grid-column:span 3}
+.面板 canvas{display:block;width:100%;height:100%}
 
-.面板 canvas{
-    display:block;
-
-    width:100%;
-    height:100%;
+.公式标题{
+  position:absolute;z-index:3;top:12px;left:0;right:0;
+  text-align:center;font-size:22px;font-weight:700;color:#263a57;
+  pointer-events:none;
 }
+.横轴公式{
+  position:absolute;z-index:3;right:25px;bottom:38px;
+  font-size:19px;font-weight:700;color:#263a57;pointer-events:none;
+}
+.右下纵坐标{
+  position:absolute;z-index:3;
+  left:12px;top:82px;
+  transform:none;
+  font-size:19px;font-weight:700;color:#263a57;
+  pointer-events:none;white-space:nowrap;
+}
+.图例公式{
+  position:absolute;z-index:3;left:64px;top:14px;
+  display:flex;align-items:center;gap:6px;font-size:16px;font-weight:600;
+  color:#263a57;pointer-events:none;background:rgba(255,255,255,.86);
+  padding:3px 6px;border-radius:6px;
+}
+.蓝点{
+  width:10px;height:10px;border-radius:50%;background:#4f7cff;display:inline-block;
+}
+.橙方{
+  width:10px;height:10px;background:#ff9f43;display:inline-block;margin-left:10px;
+}
+.mjx-container{margin:0!important}
 
 
-/* =========================
-   小尺寸屏幕
-   ========================= */
-
-@media(max-width:980px){
-
-    body{
-        overflow:auto;
-    }
-
-    .舞台{
-        width:96vw;
-        height:1200px;
-
-        aspect-ratio:auto;
-    }
-
-    .图区{
-        grid-template-columns:1fr;
-
-        grid-template-rows:
-            repeat(4,1fr);
-    }
+@media(max-width:1100px){
+  body{overflow:auto}
+  .舞台{width:98vw}
+  .图区{grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,330px)}
+  .上图,.下图{grid-column:span 1}
+  .上图:nth-child(3){grid-column:1 / -1}
+}
+@media(max-width:720px){
+  .图区{grid-template-columns:1fr;grid-template-rows:repeat(5,330px)}
+  .上图,.下图,.上图:nth-child(3){grid-column:1}
+  .控件{width:100%;justify-content:space-between}
+  input[type="range"]{flex:1}
 }
 </style>
+
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
 </head>
-
 <body>
-
 <div class="舞台">
-
-    <div class="控制区">
-
-        <div class="控件">
-            <label for="信号一选择">信号一</label>
-
-            <select id="信号一选择">
-                <option>单位脉冲</option>
-                <option>矩形</option>
-                <option selected>三角</option>
-                <option>斜坡</option>
-                <option>交替</option>
-                <option>钟形</option>
-            </select>
-        </div>
-
-
-        <div class="控件">
-            <label for="信号二选择">信号二</label>
-
-            <select id="信号二选择">
-                <option>单位脉冲</option>
-                <option selected>矩形</option>
-                <option>三角</option>
-                <option>斜坡</option>
-                <option>交替</option>
-                <option>钟形</option>
-            </select>
-        </div>
-
-
-        <div class="控件">
-
-            <label for="速度">速度</label>
-
-            <input
-                id="速度"
-                type="range"
-                min="25"
-                max="250"
-                value="100"
-            >
-
-            <span
-                id="速度显示"
-                class="速度文字"
-            >
-                1.00 倍
-            </span>
-
-        </div>
-
-
-        <div class="控件 按钮组">
-
-            <button id="开始">
-                开始
-            </button>
-
-            <button id="暂停">
-                暂停
-            </button>
-
-            <button id="继续">
-                继续
-            </button>
-
-            <button id="单步">
-                单步
-            </button>
-
-            <button id="重置">
-                重置
-            </button>
-
-        </div>
-
+  <div class="控制区">
+    <div class="控件">
+      <label for="信号一选择">信号一</label>
+      <select id="信号一选择">
+        <option>单位脉冲</option>
+        <option>矩形</option>
+        <option selected>三角</option>
+        <option>斜坡</option>
+        <option>交替</option>
+        <option>钟形</option>
+        <option value="单边指数">单边指数</option>
+      </select>
     </div>
-
-
-    <div class="图区">
-
-        <div class="面板">
-            <canvas id="画布一"></canvas>
-        </div>
-
-        <div class="面板">
-            <canvas id="画布二"></canvas>
-        </div>
-
-        <div class="面板">
-            <canvas id="画布三"></canvas>
-        </div>
-
-        <div class="面板">
-            <canvas id="画布四"></canvas>
-        </div>
-
+    <div class="控件">
+      <label for="信号二选择">信号二</label>
+      <select id="信号二选择">
+        <option>单位脉冲</option>
+        <option selected>矩形</option>
+        <option>三角</option>
+        <option>斜坡</option>
+        <option>交替</option>
+        <option>钟形</option>
+        <option value="单边指数">单边指数</option>
+      </select>
     </div>
-
+    <div class="控件">
+      <label for="指数参数">指数参数 \(a\)</label>
+      <input id="指数参数" type="number" value="0.8" min="-1.5" max="1.5" step="0.05">
+    </div>
+    <div class="控件">
+      <label for="速度">速度</label>
+      <input id="速度" type="range" min="25" max="250" value="100">
+      <span id="速度显示" class="速度文字">1.00 倍</span>
+    </div>
+    <div class="控件 按钮组">
+      <button id="开始">开始</button>
+      <button id="暂停">暂停</button>
+      <button id="继续">继续</button>
+      <button id="单步">单步</button>
+      <button id="重置">重置</button>
+    </div>
 </div>
 
+  <div class="图区">
+    <div class="面板 上图">
+      <div class="公式标题">\(x_1[m]\)</div>
+      <div class="横轴公式">\(m\)</div>
+      <canvas id="画布一"></canvas>
+    </div>
+    <div class="面板 上图">
+      <div class="公式标题">\(x_2[m]\)</div>
+      <div class="横轴公式">\(m\)</div>
+      <canvas id="画布二"></canvas>
+    </div>
+    <div class="面板 上图">
+      <div class="公式标题">\(x_2[-m]\)</div>
+      <div class="横轴公式">\(m\)</div>
+      <canvas id="画布三"></canvas>
+    </div>
+    <div class="面板 下图">
+      
+      <div class="横轴公式">\(m\)</div>
+      <div class="图例公式">
+        <span class="蓝点"></span><span>\(x_1[m]\)</span>
+        <span class="橙方"></span><span>\(x_2[n-m]\)</span>
+      </div>
+      <canvas id="画布四"></canvas>
+    </div>
+    <div class="面板 下图">
+      <div class="右下纵坐标">\(x_3[n]\)</div>
+      <div class="横轴公式">\(n\)</div>
+      <canvas id="画布五"></canvas>
+    </div>
+  </div>
+</div>
 
 <script>
 (() => {
+  const 固定波形 = {
+    "单位脉冲":[1],
+    "矩形":[1,1,1,1],
+    "三角":[1,2,3,2,1],
+    "斜坡":[1,2,3,4],
+    "交替":[1,-1,1,-1,1],
+    "钟形":[1,3,4,3,1]
+  };
 
-    /* =========================
-       基本离散信号
-       ========================= */
+  const 色 = {
+    网格:"#e8eef6", 坐标:"#8ca2bc", 数字:"#617793", 文字:"#263a57",
+    蓝:"#4f7cff", 橙:"#ff9f43", 绿:"#22b573", 红:"#ef4444",
+    灰:"#c8d3e1", 紫:"#8b5cf6", 重叠背景:"#eaf6ee"
+  };
 
-    const 波形库 = {
+  const 画布一 = document.getElementById("画布一");
+  const 画布二 = document.getElementById("画布二");
+  const 画布三 = document.getElementById("画布三");
+  const 画布四 = document.getElementById("画布四");
+  const 画布五 = document.getElementById("画布五");
 
-        "单位脉冲":[
-            1
-        ],
+  const 信号一选择 = document.getElementById("信号一选择");
+  const 信号二选择 = document.getElementById("信号二选择");
+  const 指数参数 = document.getElementById("指数参数");
+  const 速度 = document.getElementById("速度");
+  const 速度显示 = document.getElementById("速度显示");
 
-        "矩形":[
-            1,1,1,1
-        ],
+  const 开始按钮 = document.getElementById("开始");
+  const 暂停按钮 = document.getElementById("暂停");
+  const 继续按钮 = document.getElementById("继续");
+  const 单步按钮 = document.getElementById("单步");
+  const 重置按钮 = document.getElementById("重置");
 
-        "三角":[
-            1,2,3,2,1
-        ],
+  let 信号一 = [];
+  let 信号二 = [];
+  let 结果 = [];
+  let 当前序号 = 0;
+  let 定时器 = null;
+  let 播放中 = false;
 
-        "斜坡":[
-            1,2,3,4
-        ],
+  function 生成信号(名称){
+    if(名称 !== "单边指数") return [...固定波形[名称]];
+    let a = Number(指数参数.value);
+    if(!Number.isFinite(a)) a = 0.8;
+    return Array.from({length:8}, (_,m) => Math.pow(a,m));
+  }
 
-        "交替":[
-            1,-1,1,-1,1
-        ],
-
-        "钟形":[
-            1,3,4,3,1
-        ]
-    };
-
-
-    /* =========================
-       配色
-       ========================= */
-
-    const 色 = {
-
-        网格:"#e8eef6",
-
-        坐标:"#9eb1c7",
-
-        数字:"#73879f",
-
-        蓝:"#4f7cff",
-
-        橙:"#ff9f43",
-
-        绿:"#22b573",
-
-        红:"#ef4444",
-
-        灰:"#c8d3e1",
-
-        重叠背景:"#eaf6ee"
-    };
-
-
-    /* =========================
-       元素
-       ========================= */
-
-    const 画布一 =
-        document.getElementById("画布一");
-
-    const 画布二 =
-        document.getElementById("画布二");
-
-    const 画布三 =
-        document.getElementById("画布三");
-
-    const 画布四 =
-        document.getElementById("画布四");
-
-
-    const 信号一选择 =
-        document.getElementById("信号一选择");
-
-    const 信号二选择 =
-        document.getElementById("信号二选择");
-
-
-    const 速度 =
-        document.getElementById("速度");
-
-    const 速度显示 =
-        document.getElementById("速度显示");
-
-
-    const 开始按钮 =
-        document.getElementById("开始");
-
-    const 暂停按钮 =
-        document.getElementById("暂停");
-
-    const 继续按钮 =
-        document.getElementById("继续");
-
-    const 单步按钮 =
-        document.getElementById("单步");
-
-    const 重置按钮 =
-        document.getElementById("重置");
-
-
-    /* =========================
-       状态
-       ========================= */
-
-    let 信号一 = [];
-
-    let 信号二 = [];
-
-    let 结果 = [];
-
-    let 当前序号 = 0;
-
-    let 定时器 = null;
-
-    let 播放中 = false;
-
-
-    /* =========================
-       数学部分
-       ========================= */
-
-    function 计算卷积(a,b){
-
-        const 长度 =
-            a.length +
-            b.length -
-            1;
-
-        const y =
-            new Array(长度).fill(0);
-
-
-        for(
-            let n = 0;
-            n < 长度;
-            n++
-        ){
-
-            let 和 = 0;
-
-
-            for(
-                let k = 0;
-                k < a.length;
-                k++
-            ){
-
-                const m =
-                    n - k;
-
-
-                if(
-                    m >= 0 &&
-                    m < b.length
-                ){
-                    和 +=
-                        a[k] *
-                        b[m];
-                }
-            }
-
-
-            y[n] = 和;
-        }
-
-
-        return y;
+  function 计算卷积(a,b){
+    const y = new Array(a.length+b.length-1).fill(0);
+    for(let n=0;n<y.length;n++){
+      let 和=0;
+      for(let m=0;m<a.length;m++){
+        const j=n-m;
+        if(j>=0 && j<b.length) 和 += a[m]*b[j];
+      }
+      y[n]=和;
     }
+    return y;
+  }
 
+  function 更新数据(){
+    信号一 = 生成信号(信号一选择.value);
+    信号二 = 生成信号(信号二选择.value);
+    结果 = 计算卷积(信号一,信号二);
+    当前序号 = 0;
+    全部重绘();
+  }
 
-    /*
-        h[n-k]
+  /* x₂[-m]：只翻转，不平移 */
+  function 翻转信号二(){
+    return 信号二.map((值,j)=>({位置:-j,值,原序号:j}));
+  }
 
-        原序号 m
+  /* x₂[n-m]：翻转后按当前 n 平移 */
+  function 翻转平移后信号二(n){
+    return 信号二.map((值,j)=>({位置:n-j,值,原序号:j}));
+  }
 
-        m = n-k
-
-        所以：
-
-        k = n-m
-    */
-
-    function 翻转平移后信号二(n){
-
-        const 点列 = [];
-
-
-        for(
-            let m = 0;
-            m < 信号二.length;
-            m++
-        ){
-
-            点列.push({
-
-                位置:
-                    n - m,
-
-                值:
-                    信号二[m],
-
-                原序号:
-                    m
-
-            });
-        }
-
-
-        return 点列;
+  function 当前重叠项(n){
+    const 列表=[];
+    for(let m=0;m<信号一.length;m++){
+      const j=n-m;
+      if(j>=0 && j<信号二.length){
+        列表.push({
+          位置:m,
+          信号一值:信号一[m],
+          信号二值:信号二[j],
+          乘积:信号一[m]*信号二[j]
+        });
+      }
     }
+    return 列表;
+  }
 
+  function 实际速度(){ return Number(速度.value)/100; }
+  function 更新速度显示(){ 速度显示.textContent = 实际速度().toFixed(2)+" 倍"; }
 
-    function 当前重叠项(n){
-
-        const 列表 = [];
-
-
-        for(
-            let k = 0;
-            k < 信号一.length;
-            k++
-        ){
-
-            const m =
-                n - k;
-
-
-            if(
-                m >= 0 &&
-                m < 信号二.length
-            ){
-
-                列表.push({
-
-                    位置:
-                        k,
-
-                    信号一值:
-                        信号一[k],
-
-                    信号二值:
-                        信号二[m],
-
-                    乘积:
-                        信号一[k] *
-                        信号二[m]
-
-                });
-            }
-        }
-
-
-        return 列表;
-    }
-
-
-    /* =========================
-       数据刷新
-       ========================= */
-
-    function 更新数据(){
-
-        信号一 =
-            [...波形库[信号一选择.value]];
-
-        信号二 =
-            [...波形库[信号二选择.value]];
-
-
-        结果 =
-            计算卷积(
-                信号一,
-                信号二
-            );
-
-
-        当前序号 = 0;
-
-
+  function 停止播放(){
+    if(定时器){ clearTimeout(定时器); 定时器=null; }
+    播放中=false;
+  }
+  function 安排下一步(){
+    if(!播放中) return;
+    定时器=setTimeout(()=>{
+      if(当前序号<结果.length-1){
+        当前序号++;
         全部重绘();
-    }
-
-
-    /* =========================
-       动画
-       ========================= */
-
-    function 取速度倍数(){
-
-        return
-            Number(速度.value) /
-            100;
-    }
-
-
-    function 实际速度(){
-
-        return Number(速度.value) / 100;
-    }
-
-
-    function 更新速度显示(){
-
-        速度显示.textContent =
-            实际速度().toFixed(2) +
-            " 倍";
-    }
-
-
-    function 停止播放(){
-
-        if(定时器){
-
-            clearTimeout(
-                定时器
-            );
-
-            定时器 = null;
-        }
-
-
-        播放中 = false;
-    }
-
-
-    function 安排下一步(){
-
-        if(!播放中){
-            return;
-        }
-
-
-        const 延时 =
-            850 /
-            实际速度();
-
-
-        定时器 =
-            setTimeout(
-                () => {
-
-                    if(
-                        当前序号 <
-                        结果.length - 1
-                    ){
-
-                        当前序号++;
-
-                        全部重绘();
-
-                        安排下一步();
-
-                    }else{
-
-                        停止播放();
-                    }
-
-                },
-                延时
-            );
-    }
-
-
-    function 开始播放(){
-
-        停止播放();
-
-
-        当前序号 = 0;
-
-
-        全部重绘();
-
-
-        播放中 = true;
-
-
         安排下一步();
-    }
-
-
-    function 继续播放(){
-
-        if(播放中){
-            return;
-        }
-
-
-        if(
-            当前序号 >=
-            结果.length - 1
-        ){
-            return;
-        }
-
-
-        播放中 = true;
-
-
-        安排下一步();
-    }
-
-
-    function 单步前进(){
-
+      }else{
         停止播放();
-
-
-        if(
-            当前序号 <
-            结果.length - 1
-        ){
-
-            当前序号++;
-
-            全部重绘();
-        }
-    }
-
-
-    function 重置动画(){
-
-        停止播放();
-
-
-        当前序号 = 0;
-
-
-        全部重绘();
-    }
-
-
-    /* =========================
-       绘图范围
-       ========================= */
-
-    function 取横坐标范围(){
-
-        const 最小序号 =
-            -(信号二.length - 1) - 1;
-
-
-        const 最大序号 =
-            结果.length;
-
-
-        return {
-            最小序号,
-            最大序号
-        };
-    }
-
-
-    function 最大绝对值(arr){
-
-        let 最大值 = 0;
-
-
-        for(const v of arr){
-
-            最大值 =
-                Math.max(
-                    最大值,
-                    Math.abs(v)
-                );
-        }
-
-
-        return 最大值;
-    }
-
-
-    function 取信号纵范围(){
-
-        let 最大值 =
-            Math.max(
-                最大绝对值(信号一),
-                最大绝对值(信号二),
-                1
-            );
-
-
-        return 最大值 * 1.28;
-    }
-
-
-    function 取结果纵范围(){
-
-        let 最大值 =
-            Math.max(
-                最大绝对值(结果),
-                1
-            );
-
-
-        return 最大值 * 1.22;
-    }
-
-
-    /* =========================
-       高清画布
-       ========================= */
-
-    function 取画布上下文(canvas){
-
-        const 像素倍率 =
-            window.devicePixelRatio ||
-            1;
-
-
-        const rect =
-            canvas.getBoundingClientRect();
-
-
-        const 宽 =
-            rect.width;
-
-        const 高 =
-            rect.height;
-
-
-        canvas.width =
-            Math.max(
-                1,
-                Math.round(
-                    宽 *
-                    像素倍率
-                )
-            );
-
-
-        canvas.height =
-            Math.max(
-                1,
-                Math.round(
-                    高 *
-                    像素倍率
-                )
-            );
-
-
-        const ctx =
-            canvas.getContext("2d");
-
-
-        ctx.setTransform(
-            像素倍率,
-            0,
-            0,
-            像素倍率,
-            0,
-            0
-        );
-
-
-        ctx.clearRect(
-            0,
-            0,
-            宽,
-            高
-        );
-
-
-        return {
-            ctx,
-            宽,
-            高
-        };
-    }
-
-
-    /* =========================
-       坐标系
-       ========================= */
-
-    function 建立坐标(
-        ctx,
-        宽,
-        高,
-        纵最大值
-    ){
-
-        const 横范围 =
-            取横坐标范围();
-
-
-        const 左 = 38;
-
-        const 右 =
-            宽 - 14;
-
-        const 上 = 14;
-
-        const 下 =
-            高 - 27;
-
-
-        const 图宽 =
-            右 - 左;
-
-        const 图高 =
-            下 - 上;
-
-
-        const y最大 =
-            纵最大值;
-
-        const y最小 =
-            -纵最大值;
-
-
-        const mapX =
-            n =>
-                左 +
-                (
-                    (
-                        n -
-                        横范围.最小序号
-                    )
-                    /
-                    (
-                        横范围.最大序号 -
-                        横范围.最小序号
-                    )
-                )
-                *
-                图宽;
-
-
-        const mapY =
-            v =>
-                下 -
-                (
-                    (
-                        v -
-                        y最小
-                    )
-                    /
-                    (
-                        y最大 -
-                        y最小
-                    )
-                )
-                *
-                图高;
-
-
-        const y零 =
-            mapY(0);
-
-
-        /* 竖向离散网格 */
-
-        ctx.save();
-
-        ctx.strokeStyle =
-            色.网格;
-
-        ctx.lineWidth =
-            1;
-
-
-        for(
-            let n =
-                横范围.最小序号;
-
-            n <=
-                横范围.最大序号;
-
-            n++
-        ){
-
-            const x =
-                mapX(n);
-
-
-            ctx.beginPath();
-
-            ctx.moveTo(
-                x,
-                上
-            );
-
-            ctx.lineTo(
-                x,
-                下
-            );
-
-            ctx.stroke();
-        }
-
-
-        /* 水平零轴 */
-
-        ctx.strokeStyle =
-            色.坐标;
-
-        ctx.lineWidth =
-            1.4;
-
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            左,
-            y零
-        );
-
-        ctx.lineTo(
-            右,
-            y零
-        );
-
-        ctx.stroke();
-
-
-        /* 横坐标数字 */
-
-        ctx.fillStyle =
-            色.数字;
-
-        ctx.font =
-            "12px Microsoft YaHei";
-
-        ctx.textAlign =
-            "center";
-
-        ctx.textBaseline =
-            "top";
-
-
-        for(
-            let n =
-                横范围.最小序号;
-
-            n <=
-                横范围.最大序号;
-
-            n++
-        ){
-
-            ctx.fillText(
-                String(n),
-                mapX(n),
-                下 + 6
-            );
-        }
-
-
-        ctx.restore();
-
-
-        return {
-
-            左,
-            右,
-            上,
-            下,
-
-            mapX,
-            mapY,
-
-            y零,
-
-            横范围
-        };
-    }
-
-
-    /* =========================
-       离散冲激绘制
-       ========================= */
-
-    function 画冲激线(
-        ctx,
-        坐标,
-        序号,
-        值,
-        颜色,
-        选项 = {}
-    ){
-
-        const {
-
-            偏移 = 0,
-
-            线宽 = 2.5,
-
-            半径 = 4.5,
-
-            透明度 = 1,
-
-            形状 = "圆",
-
-            高亮 = false
-
-        } = 选项;
-
-
-        const x =
-            坐标.mapX(
-                序号 +
-                偏移
-            );
-
-
-        const y =
-            坐标.mapY(
-                值
-            );
-
-
-        ctx.save();
-
-
-        ctx.globalAlpha =
-            透明度;
-
-
-        ctx.strokeStyle =
-            颜色;
-
-
-        ctx.fillStyle =
-            颜色;
-
-
-        ctx.lineWidth =
-            高亮
-            ?
-            Math.max(
-                线宽,
-                3.2
-            )
-            :
-            线宽;
-
-
-        /* 竖线 */
-
-        ctx.beginPath();
-
-        ctx.moveTo(
-            x,
-            坐标.y零
-        );
-
-        ctx.lineTo(
-            x,
-            y
-        );
-
-        ctx.stroke();
-
-
-        /* 端点 */
-
-        const r =
-            高亮
-            ?
-            半径 + 1
-            :
-            半径;
-
-
-        if(
-            形状 === "方"
-        ){
-
-            ctx.fillRect(
-                x - r,
-                y - r,
-                r * 2,
-                r * 2
-            );
-
-        }else{
-
-            ctx.beginPath();
-
-            ctx.arc(
-                x,
-                y,
-                r,
-                0,
-                Math.PI * 2
-            );
-
-            ctx.fill();
-        }
-
-
-        ctx.restore();
-    }
-
-
-    /* =========================
-       第一幅图
-       信号一
-       ========================= */
-
-    function 画面板一(){
-
-        const {
-            ctx,
-            宽,
-            高
-        } =
-            取画布上下文(
-                画布一
-            );
-
-
-        const 坐标 =
-            建立坐标(
-                ctx,
-                宽,
-                高,
-                取信号纵范围()
-            );
-
-
-        for(
-            let k = 0;
-            k < 信号一.length;
-            k++
-        ){
-
-            画冲激线(
-                ctx,
-                坐标,
-                k,
-                信号一[k],
-                色.蓝,
-                {
-                    半径:4.5,
-                    线宽:2.6
-                }
-            );
-        }
-    }
-
-
-    /* =========================
-       第二幅图
-       翻转并平移的信号二
-       ========================= */
-
-    function 画面板二(){
-
-        const {
-            ctx,
-            宽,
-            高
-        } =
-            取画布上下文(
-                画布二
-            );
-
-
-        const 坐标 =
-            建立坐标(
-                ctx,
-                宽,
-                高,
-                取信号纵范围()
-            );
-
-
-        const 点列 =
-            翻转平移后信号二(
-                当前序号
-            );
-
-
-        for(const 点 of 点列){
-
-            画冲激线(
-                ctx,
-                坐标,
-                点.位置,
-                点.值,
-                色.橙,
-                {
-                    半径:4.5,
-                    线宽:2.6,
-                    形状:"方"
-                }
-            );
-        }
-    }
-
-
-    /* =========================
-       第三幅图
-       当前对齐
-
-       这里只画两个信号。
-
-       蓝色信号向左错开。
-       橙色信号向右错开。
-
-       即使数值完全相同，
-       也不会彼此覆盖。
-       ========================= */
-
-    function 画面板三(){
-
-        const {
-            ctx,
-            宽,
-            高
-        } =
-            取画布上下文(
-                画布三
-            );
-
-
-        const 坐标 =
-            建立坐标(
-                ctx,
-                宽,
-                高,
-                取信号纵范围()
-            );
-
-
-        const 点列 =
-            翻转平移后信号二(
-                当前序号
-            );
-
-
-        const 当前项 =
-            当前重叠项(
-                当前序号
-            );
-
-
-        const 重叠位置 =
-            new Set(
-                当前项.map(
-                    item =>
-                        item.位置
-                )
-            );
-
-
-        /*
-            重叠区域淡色背景
-        */
-
-        for(
-            const k
-            of 重叠位置
-        ){
-
-            const x1 =
-                坐标.mapX(
-                    k - 0.38
-                );
-
-
-            const x2 =
-                坐标.mapX(
-                    k + 0.38
-                );
-
-
-            ctx.save();
-
-
-            ctx.fillStyle =
-                色.重叠背景;
-
-
-            ctx.fillRect(
-                x1,
-                坐标.上,
-                x2 - x1,
-                坐标.下 -
-                坐标.上
-            );
-
-
-            ctx.restore();
-        }
-
-
-        /*
-            信号一
-
-            整体向左偏
-        */
-
-        for(
-            let k = 0;
-            k < 信号一.length;
-            k++
-        ){
-
-            const 是否重叠 =
-                重叠位置.has(k);
-
-
-            画冲激线(
-                ctx,
-                坐标,
-                k,
-                信号一[k],
-                色.蓝,
-                {
-
-                    偏移:
-                        -0.14,
-
-                    半径:
-                        4.5,
-
-                    线宽:
-                        2.6,
-
-                    形状:
-                        "圆",
-
-                    高亮:
-                        是否重叠
-
-                }
-            );
-        }
-
-
-        /*
-            翻转平移后的信号二
-
-            整体向右偏
-        */
-
-        for(
-            const 点
-            of 点列
-        ){
-
-            const 是否重叠 =
-                重叠位置.has(
-                    点.位置
-                );
-
-
-            画冲激线(
-                ctx,
-                坐标,
-                点.位置,
-                点.值,
-                色.橙,
-                {
-
-                    偏移:
-                        0.14,
-
-                    半径:
-                        4.5,
-
-                    线宽:
-                        2.6,
-
-                    形状:
-                        "方",
-
-                    高亮:
-                        是否重叠
-
-                }
-            );
-        }
-    }
-
-
-    /* =========================
-       第四幅图
-       卷积输出
-       ========================= */
-
-    function 画面板四(){
-
-        const {
-            ctx,
-            宽,
-            高
-        } =
-            取画布上下文(
-                画布四
-            );
-
-
-        const 坐标 =
-            建立坐标(
-                ctx,
-                宽,
-                高,
-                取结果纵范围()
-            );
-
-
-        for(
-            let n = 0;
-            n < 结果.length;
-            n++
-        ){
-
-            let 颜色 =
-                色.灰;
-
-
-            let 透明度 =
-                0.42;
-
-
-            let 高亮 =
-                false;
-
-
-            /*
-                已经计算完成
-            */
-
-            if(
-                n <
-                当前序号
-            ){
-
-                颜色 =
-                    色.绿;
-
-                透明度 =
-                    1;
-            }
-
-
-            /*
-                当前正在计算
-            */
-
-            if(
-                n ===
-                当前序号
-            ){
-
-                颜色 =
-                    色.红;
-
-                透明度 =
-                    1;
-
-                高亮 =
-                    true;
-            }
-
-
-            画冲激线(
-                ctx,
-                坐标,
-                n,
-                结果[n],
-                颜色,
-                {
-
-                    半径:
-                        4.5,
-
-                    线宽:
-                        2.6,
-
-                    透明度:
-                        透明度,
-
-                    高亮:
-                        高亮
-
-                }
-            );
-        }
-    }
-
-
-    /* =========================
-       全部刷新
-       ========================= */
-
-    function 全部重绘(){
-
-        画面板一();
-
-        画面板二();
-
-        画面板三();
-
-        画面板四();
-    }
-
-
-    /* =========================
-       控件事件
-       ========================= */
-
-    开始按钮.addEventListener(
-        "click",
-        开始播放
+      }
+    },850/实际速度());
+  }
+  function 开始播放(){
+    停止播放();
+    当前序号=0;
+    全部重绘();
+    播放中=true;
+    安排下一步();
+  }
+  function 继续播放(){
+    if(播放中 || 当前序号>=结果.length-1) return;
+    播放中=true;
+    安排下一步();
+  }
+  function 单步前进(){
+    停止播放();
+    if(当前序号<结果.length-1){ 当前序号++; 全部重绘(); }
+  }
+  function 重置动画(){
+    停止播放();当前序号=0;全部重绘();
+  }
+
+  function 最大绝对值(arr){
+    let v=0;
+    for(const x of arr) v=Math.max(v,Math.abs(x));
+    return v;
+  }
+  function 取信号纵范围(){
+    return Math.max(最大绝对值(信号一),最大绝对值(信号二),1)*1.35;
+  }
+  function 取乘积纵范围(){
+    const maxProd=Math.max(
+      ...当前重叠项(当前序号).map(x=>Math.abs(x.乘积)),
+      最大绝对值(信号一),最大绝对值(信号二),1
     );
+    return maxProd*1.35;
+  }
+  function 取结果纵范围(){
+    return Math.max(最大绝对值(结果),1)*1.25;
+  }
+
+  function 取横坐标范围(类型){
+    if(类型==="x1"){
+      return {最小序号:-1,最大序号:Math.max(信号一.length,5)};
+    }
+    if(类型==="x2"){
+      return {最小序号:-1,最大序号:Math.max(信号二.length,5)};
+    }
+    if(类型==="flip"){
+      return {最小序号:-Math.max(信号二.length,5),最大序号:1};
+    }
+    if(类型==="output"){
+      return {最小序号:-1,最大序号:Math.max(结果.length,6)};
+    }
+    return {
+      最小序号:-(信号二.length-1)-1,
+      最大序号:Math.max(结果.length,信号一.length)+1
+    };
+  }
+
+  function 取画布上下文(canvas){
+    const 像素倍率=window.devicePixelRatio||1;
+    const rect=canvas.getBoundingClientRect();
+    const 宽=rect.width, 高=rect.height;
+    canvas.width=Math.max(1,Math.round(宽*像素倍率));
+    canvas.height=Math.max(1,Math.round(高*像素倍率));
+    const ctx=canvas.getContext("2d");
+    ctx.setTransform(像素倍率,0,0,像素倍率,0,0);
+    ctx.clearRect(0,0,宽,高);
+    return {ctx,宽,高};
+  }
+
+  function 建立坐标(ctx,宽,高,纵最大值,横变量,范围类型,纵标签){
+    const 横范围=取横坐标范围(范围类型);
+    const 左=58,右=宽-22,上=(范围类型==="align"||范围类型==="output"?54:92),下=高-48;
+    const 图宽=Math.max(1,右-左),图高=Math.max(1,下-上);
+    const y最大=纵最大值,y最小=-纵最大值;
+
+    const mapX=v=>左+(v-横范围.最小序号)/(横范围.最大序号-横范围.最小序号)*图宽;
+    const mapY=v=>下-(v-y最小)/(y最大-y最小)*图高;
+    const y零=mapY(0);
+
+    ctx.save();
+
+    /* 只保留横坐标轴 */
+    ctx.strokeStyle=色.坐标;
+    ctx.lineWidth=1.6;
+    ctx.beginPath();
+    ctx.moveTo(左,y零);
+    ctx.lineTo(右,y零);
+    ctx.stroke();
+
+    /* 只绘制横坐标刻度数字 */
+    ctx.fillStyle=色.数字;
+    ctx.font='15px "Microsoft YaHei"';
+    ctx.textAlign="center";
+    ctx.textBaseline="top";
+    for(let m=横范围.最小序号;m<=横范围.最大序号;m++){
+      ctx.fillText(String(m),mapX(m),下+8);
+    }
+
+    ctx.restore();
+    return {左,右,上,下,mapX,mapY,y零,横范围};
+  }
 
 
-    暂停按钮.addEventListener(
-        "click",
-        停止播放
-    );
+  function 画冲激线(ctx,坐标,序号,值,颜色,选项={}){
+    const {偏移=0,线宽=2.8,半径=5,透明度=1,形状="圆",高亮=false}=选项;
+    const x=坐标.mapX(序号+偏移),y=坐标.mapY(值);
+    ctx.save();
+    ctx.globalAlpha=透明度;ctx.strokeStyle=颜色;ctx.fillStyle=颜色;
+    ctx.lineWidth=高亮?Math.max(线宽,3.6):线宽;
+    ctx.beginPath();ctx.moveTo(x,坐标.y零);ctx.lineTo(x,y);ctx.stroke();
+    const r=高亮?半径+1.5:半径;
+    if(形状==="方"){
+      ctx.fillRect(x-r,y-r,r*2,r*2);
+    }else{
+      ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
+  }
 
+  function 画面板一(){
+    const {ctx,宽,高}=取画布上下文(画布一);
+    const 坐标=建立坐标(ctx,宽,高,取信号纵范围(),"m","x1","x₁[m]");
+    for(let m=0;m<信号一.length;m++){
+      画冲激线(ctx,坐标,m,信号一[m],色.蓝);
+    }
+  }
 
-    继续按钮.addEventListener(
-        "click",
-        继续播放
-    );
+  function 画面板二(){
+    const {ctx,宽,高}=取画布上下文(画布二);
+    const 坐标=建立坐标(ctx,宽,高,取信号纵范围(),"m","x2","x₂[m]");
+    for(let m=0;m<信号二.length;m++){
+      画冲激线(ctx,坐标,m,信号二[m],色.橙,{形状:"方"});
+    }
+  }
 
+  function 画面板三(){
+    const {ctx,宽,高}=取画布上下文(画布三);
+    const 坐标=建立坐标(ctx,宽,高,取信号纵范围(),"m","flip","x₂[−m]");
+    for(const 点 of 翻转信号二()){
+      画冲激线(ctx,坐标,点.位置,点.值,色.紫,{形状:"方"});
+    }
+  }
 
-    单步按钮.addEventListener(
-        "click",
-        单步前进
-    );
+  function 画面板四(){
+    const {ctx,宽,高}=取画布上下文(画布四);
+    const 当前项=当前重叠项(当前序号);
+    const 当前和=当前项.reduce((s,x)=>s+x.乘积,0);
+const 坐标=建立坐标(ctx,宽,高,取乘积纵范围(),"m","align","x₁[m], x₂[n−m]");
 
+    const 点列=翻转平移后信号二(当前序号);
+    const 重叠位置=new Set(当前项.map(item=>item.位置));
 
-    重置按钮.addEventListener(
-        "click",
-        重置动画
-    );
+    for(const m of 重叠位置){
+      const x1=坐标.mapX(m-0.38),x2=坐标.mapX(m+0.38);
+      ctx.save();ctx.fillStyle=色.重叠背景;
+      ctx.fillRect(x1,坐标.上,x2-x1,坐标.下-坐标.上);ctx.restore();
+    }
 
+    for(let m=0;m<信号一.length;m++){
+      画冲激线(ctx,坐标,m,信号一[m],色.蓝,{
+        偏移:-0.12,高亮:重叠位置.has(m)
+      });
+    }
+    for(const 点 of 点列){
+      画冲激线(ctx,坐标,点.位置,点.值,色.橙,{
+        偏移:0.12,形状:"方",高亮:重叠位置.has(点.位置)
+      });
+    }
 
-    信号一选择.addEventListener(
-        "change",
-        () => {
+  }
 
-            停止播放();
+  function 格式化数值(v){
+    if(Math.abs(v-Math.round(v))<1e-10) return String(Math.round(v));
+    return Number(v.toFixed(4)).toString();
+  }
 
-            更新数据();
-        }
-    );
+  function 画面板五(){
+    const {ctx,宽,高}=取画布上下文(画布五);
+    const 坐标=建立坐标(ctx,宽,高,取结果纵范围(),"n","output","x₃[n]");
 
+    for(let n=0;n<结果.length;n++){
+      let 颜色=色.灰,透明度=.38,高亮=false;
+      if(n<当前序号){颜色=色.绿;透明度=1}
+      if(n===当前序号){颜色=色.红;透明度=1;高亮=true}
+      画冲激线(ctx,坐标,n,结果[n],颜色,{透明度,高亮});
+    }
+}
 
-    信号二选择.addEventListener(
-        "change",
-        () => {
+  function 全部重绘(){
+    画面板一();画面板二();画面板三();画面板四();画面板五();
+  }
 
-            停止播放();
+  开始按钮.addEventListener("click",开始播放);
+  暂停按钮.addEventListener("click",停止播放);
+  继续按钮.addEventListener("click",继续播放);
+  单步按钮.addEventListener("click",单步前进);
+  重置按钮.addEventListener("click",重置动画);
 
-            更新数据();
-        }
-    );
-
-
-    速度.addEventListener(
-        "input",
-        () => {
-
-            更新速度显示();
-
-
-            if(播放中){
-
-                if(定时器){
-
-                    clearTimeout(
-                        定时器
-                    );
-
-                    定时器 =
-                        null;
-                }
-
-
-                安排下一步();
-            }
-        }
-    );
-
-
-    window.addEventListener(
-        "resize",
-        全部重绘
-    );
-
-
-    /* =========================
-       初始化
-       ========================= */
-
+  信号一选择.addEventListener("change",()=>{停止播放();更新数据()});
+  信号二选择.addEventListener("change",()=>{停止播放();更新数据()});
+  指数参数.addEventListener("input",()=>{停止播放();更新数据()});
+  速度.addEventListener("input",()=>{
     更新速度显示();
+    if(播放中){
+      if(定时器){clearTimeout(定时器);定时器=null}
+      安排下一步();
+    }
+  });
+  window.addEventListener("resize",全部重绘);
 
-    更新数据();
-
+  更新速度显示();
+  更新数据();
 })();
 </script>
-
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
