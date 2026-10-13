@@ -1,465 +1,352 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>系统响应原理演示</title>
-    <style>
-        body {
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            background-color: #ffffff; /* 纯白背景，更像教科书 */
-            color: #333; /* 深灰字体 */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            margin: 0;
-            user-select: none;
-        }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>敲钟：冲激响应与频率响应</title>
+<style>
+:root{color-scheme:light;--ink:#263450;--sub:#7e8ca4;--axis:#a8b7cc;--line:#e7ecf4;--accent:#576be4}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden}
+body{font-family:Inter,"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif;color:var(--ink);background:#f6f8fd}
+.dashboard{position:fixed;inset:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:0}
+.quad{min-width:0;min-height:0;position:relative;overflow:hidden;border-right:1px solid #e2e9f3;border-bottom:1px solid #e2e9f3}
+.quad:nth-child(1){background:#fcfdff}
+.quad:nth-child(2){background:#f8faff;border-right:none}
+.quad:nth-child(3){background:#f8faff;border-bottom:none}
+.quad:nth-child(4){background:#fcfdff;border-right:none;border-bottom:none}
+.quad canvas{display:block;width:100%;height:100%}
+.graph-name{position:absolute;top:clamp(14px,2.8vh,26px);left:clamp(18px,2.5vw,34px);font-size:clamp(18px,1.8vw,28px);line-height:1.18;font-weight:720;letter-spacing:-.02em;pointer-events:none;z-index:2;color:#303b5c;max-width:calc(100% - 26px);overflow-wrap:anywhere;text-shadow:0 1px 0 rgba(255,255,255,.7)}
+.graph-name .cn-title{display:block;margin-top:4px;font-size:.82em;font-weight:650;color:#60718f;letter-spacing:0}
+.graph-name .mjx-svg{vertical-align:middle}
+.quad:nth-child(even) .graph-name{left:auto;right:clamp(15px,2.4vw,32px);text-align:right}
+.y-colorbar{position:absolute;left:24px;right:24px;bottom:16px;display:flex;align-items:center;justify-content:center;gap:12px;z-index:3;pointer-events:none}
+.y-colorbar .cb-label{font-size:18px;font-weight:650;color:#60718f;line-height:1}
+.y-colorbar .ramp{display:flex;border:1px solid #d0d8e7;border-radius:5px;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.85) inset}
+.y-colorbar .ramp span{display:block;width:16px;height:18px}
+.bell-overlay{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:clamp(156px,25vmin,310px);aspect-ratio:1;z-index:5;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(235,204,140,.85);background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.98) 0%,rgba(255,250,239,.95) 53%,rgba(255,243,215,.92) 80%,rgba(255,255,255,.92) 100%);box-shadow:0 12px 43px rgba(117,91,62,.16),0 0 0 8px rgba(255,255,255,.42);cursor:pointer;overflow:hidden;touch-action:manipulation}
+.bell-overlay:focus-visible{outline:3px solid var(--accent);outline-offset:8px}
+.bell-overlay svg{width:100%;height:100%;pointer-events:none}
+.bell-overlay .hint{position:absolute;left:50%;bottom:7.5%;transform:translateX(-50%);width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.92);color:#a17a25;border:1px solid rgba(197,155,75,.28);box-shadow:0 2px 9px rgba(93,79,43,.1);font-size:18px;font-weight:700;pointer-events:none}
 
-        h1 { margin-bottom: 10px; letter-spacing: 1px; color: #000; font-size: 28px; }
-        .subtitle { color: #555; font-size: 18px; margin-bottom: 35px; font-weight: normal; }
-
-        /* 布局容器 */
-        .stage-container {
-            display: flex;
-            flex-direction: row;
-            gap: 25px;
-            justify-content: center;
-            align-items: stretch;
-            width: 100%;
-            max-width: 1400px; /* 加宽，适应大字号 */
-        }
-
-        /* 面板卡片 */
-        .panel {
-            background: #fdfdfd;
-            border-radius: 8px;
-            padding: 25px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            border: 1px solid #ddd;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .panel-title {
-            width: 100%;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: bold;
-            color: #222;
-            font-size: 20px; /* 标题字号加大 */
-        }
-
-        canvas {
-            width: 100%;
-            height: 280px; /* 图像高度增加 */
-            background: #fafafa;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-
-        .desc-box {
-            margin-top: 20px;
-            background: #f0f0f0;
-            border-radius: 6px;
-            padding: 15px;
-            font-size: 16px; /* 说明文字号加大 */
-            color: #333;     /* 深灰色 */
-            width: 95%;
-            line-height: 1.8;
-            text-align: left;
-        }
-
-        .badge {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-
-        /* 按钮设计 */
-        #btnStrike {
-            margin-top: 50px;
-            padding: 16px 70px;
-            font-size: 20px;
-            border: none;
-            border-radius: 6px;
-            background: #2c3e50;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
-            transition: background 0.2s;
-        }
-
-        #btnStrike:hover { background: #34495e; }
-        #btnStrike:disabled { background: #95a5a6; cursor: default; }
-
-    </style>
+@media(max-width:640px){.graph-name{top:10px;left:12px;font-size:clamp(18px,4.2vw,22px)}.bell-overlay{width:clamp(132px,37vw,175px)}.bell-overlay .hint{width:30px;height:30px;font-size:18px}.y-colorbar{left:12px;right:12px;bottom:10px;gap:8px}.y-colorbar .cb-label{font-size:18px}.y-colorbar .ramp span{width:10px;height:14px}}
+@media(prefers-reduced-motion:reduce){.bell-overlay{transition:none}}
+</style>
+<script>
+window.MathJax = {
+  tex: {inlineMath: [['\\(','\\)'], ['$', '$']]},
+  svg: {fontCache: 'global'}
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 <body>
+<main class="dashboard">
+  <section class="quad" aria-label="输入的时域波形"><canvas id="inputTime"></canvas><div class="graph-name"><span class="formula">\(x[n]=\delta[n]\)</span><span class="cn-title">输入脉冲</span></div></section>
+  <section class="quad" aria-label="输入的频域幅度"><canvas id="inputFreq"></canvas><div class="graph-name"><span class="formula">\(\lvert X(e^{j\omega})\rvert\)</span><span class="cn-title">输入频谱</span></div></section>
+  <section class="quad" aria-label="钟声的时域冲激响应"><canvas id="outputTime"></canvas><div class="graph-name"><span class="formula">\(y[n]=h[n]\)</span><span class="cn-title">钟声响应</span></div></section>
+  <section class="quad" aria-label="钟声的离散时间傅里叶变换幅度"><canvas id="outputFreq"></canvas><div class="graph-name"><span class="formula">\(\lvert Y(e^{j\omega})\rvert\)</span><span class="cn-title">输出频谱</span></div><div class="y-colorbar" aria-label="16级频谱幅度色阶"><span class="cb-label">弱</span><div class="ramp"><span style="background:#eef5ff"></span><span style="background:#dae9ff"></span><span style="background:#bed7ff"></span><span style="background:#9cbffe"></span><span style="background:#7fa7fc"></span><span style="background:#648ef4"></span><span style="background:#5379df"></span><span style="background:#555fc9"></span><span style="background:#6750bb"></span><span style="background:#8045b0"></span><span style="background:#a1419e"></span><span style="background:#ba468b"></span><span style="background:#d35a72"></span><span style="background:#e77759"></span><span style="background:#f39745"></span><span style="background:#f5bf47"></span></div><span class="cb-label">强</span></div></section>
+</main>
+<button class="bell-overlay" id="strike" type="button" aria-label="敲钟并播放声音" title="敲钟">
+  <svg viewBox="0 0 300 300" aria-hidden="true">
+    <defs>
+      <linearGradient id="gold" x1=".18" x2=".84" y1="0" y2="1"><stop offset="0" stop-color="#fff2b5"/><stop offset=".28" stop-color="#f8d576"/><stop offset=".65" stop-color="#dba239"/><stop offset="1" stop-color="#b9821f"/></linearGradient>
+      <linearGradient id="rim" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#fff5c7"/><stop offset="1" stop-color="#ab7518"/></linearGradient>
+    </defs>
+    <g id="ripples" stroke="#eac371" stroke-width="2" fill="none"></g>
+    <g id="striker" transform="translate(0 0)">
+      <line x1="47" y1="102" x2="107" y2="144" stroke="#8d6944" stroke-width="10" stroke-linecap="round"/>
+      <ellipse cx="43" cy="98" rx="25" ry="20" fill="#bfc9d6" stroke="#8595a9" stroke-width="3"/>
+    </g>
+    <g id="bellMove" transform="rotate(0 150 150)">
+      <path d="M139 69 L139 54 Q139 43 150 43 Q161 43 161 54 L161 69" fill="#d4ad53" stroke="#aa7826" stroke-width="3"/>
+      <path d="M150 63 C98 63 101 110 99 140 C97 176 85 194 75 210 Q150 248 225 210 C215 194 203 176 201 140 C199 110 202 63 150 63 Z" fill="url(#gold)" stroke="#b58026" stroke-width="4"/>
+      <path d="M75 210 Q150 247 225 210" fill="none" stroke="url(#rim)" stroke-width="12" stroke-linecap="round"/>
+      <path d="M112 109 Q125 83 145 81" fill="none" stroke="#fff6c4" stroke-opacity=".63" stroke-width="8" stroke-linecap="round"/>
+      <line x1="150" y1="174" x2="150" y2="226" stroke="#a47c3b" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="150" cy="233" r="18" fill="#bc852d" stroke="#996a1e" stroke-width="3"/>
+    </g>
+  </svg>
+  <span class="hint" id="hint">▶</span>
+</button>
+<script>
+(() => {
+  'use strict';
+  const colors=[
+    '#eef5ff','#dae9ff','#bed7ff','#9cbffe',
+    '#7fa7fc','#648ef4','#5379df','#555fc9',
+    '#6750bb','#8045b0','#a1419e','#ba468b',
+    '#d35a72','#e77759','#f39745','#f5bf47'
+  ];
+  const sampleRate=8192;
+  const duration=4.8;
+  const N=Math.round(sampleRate*duration);
+  const frequencyBins=360;
+  const spectralSnapshots=225;
+  const maxFreq=sampleRate/2;
+  const modes=[
+    {freq:247,amp:.88,tau:3.40,phase:.00,attack:.004},
+    {freq:389,amp:.63,tau:2.25,phase:1.10,attack:.005},
+    {freq:610,amp:.48,tau:1.42,phase:.53,attack:.006},
+    {freq:907,amp:.37,tau:.84,phase:2.16,attack:.007},
+    {freq:1315,amp:.25,tau:.49,phase:1.28,attack:.008},
+    {freq:1836,amp:.20,tau:.30,phase:.75,attack:.010},
+    {freq:2517,amp:.16,tau:.11,phase:2.40,attack:.003},
+    {freq:3126,amp:.12,tau:.075,phase:.95,attack:.003}
+  ];
+  // 同一个离散冲激响应同时驱动声音、时域图和 DTFT。
+  const h=new Float32Array(N);
+  let wavePeak=1e-9;
+  for(let n=0;n<N;n++){
+    const t=n/sampleRate;
+    let v=0;
+    for(const mode of modes){
+      const a=mode.amp*Math.exp(-t/mode.tau)*(1-Math.exp(-t/mode.attack));
+      v+=a*Math.sin(2*Math.PI*mode.freq*t+mode.phase);
+    }
+    h[n]=v;
+    wavePeak=Math.max(wavePeak,Math.abs(v));
+  }
+  for(let n=0;n<N;n++) h[n]*=.80/wavePeak;
 
-    <h1>系统响应原理：从敲击到频率特性</h1>
-    <div class="subtitle">
-        原理解析：通过单位脉冲响应 h[n] 观察系统如何构建 H(e<sup>jω</sup>)
-    </div>
+  // 对已经观测到的 h[0...n] 求部分 DTFT，而不是叠加幅度谱。
+  // DTFT: S_m(ω) = Σ_{n=0}^{m} h[n] exp(-jωn)
+  const spectra=Array.from({length:spectralSnapshots},()=>new Float32Array(frequencyBins));
+  const sumRe=new Float64Array(frequencyBins),sumIm=new Float64Array(frequencyBins);
+  const phaseRe=new Float64Array(frequencyBins),phaseIm=new Float64Array(frequencyBins);
+  const stepRe=new Float64Array(frequencyBins),stepSin=new Float64Array(frequencyBins);
+  for(let k=0;k<frequencyBins;k++){
+    const omega=Math.PI*k/(frequencyBins-1);
+    phaseRe[k]=1;
+    stepRe[k]=Math.cos(omega);
+    stepSin[k]=Math.sin(omega);
+  }
+  let frame=0,maxSpectrum=1e-10;
+  for(let n=0;n<N;n++){
+    const value=h[n];
+    for(let k=0;k<frequencyBins;k++){
+      const re=phaseRe[k],im=phaseIm[k];
+      sumRe[k]+=value*re;
+      sumIm[k]+=value*im;
+      const c=stepRe[k],s=stepSin[k];
+      phaseRe[k]=re*c+im*s;
+      phaseIm[k]=im*c-re*s;
+    }
+    while(frame<spectralSnapshots && n+1>=Math.round((frame+1)*N/spectralSnapshots)){
+      const dst=spectra[frame];
+      for(let k=0;k<frequencyBins;k++){
+        dst[k]=Math.hypot(sumRe[k],sumIm[k]);
+        if(dst[k]>maxSpectrum)maxSpectrum=dst[k];
+      }
+      frame++;
+    }
+  }
+  const freqCeiling=maxSpectrum*1.08;
 
-    <div class="stage-container">
-        
-        <!-- 面板1 -->
-        <div class="panel">
-            <div class="panel-title">1. 物理激励</div>
-            <canvas id="bellCanvas" width="400" height="300"></canvas>
-            <div class="desc-box">
-                <b>动作：</b>重锤敲击<br>
-                <b>数学含义：</b>单位脉冲 δ[n]。<br>
-                敲击瞬间为系统注入能量，激发系统产生其固有的震动模式。
-            </div>
-        </div>
+  const canvasIds=['inputTime','inputFreq','outputTime','outputFreq'];
+  const canvases=Object.fromEntries(canvasIds.map(id=>[id,document.getElementById(id)]));
+  const DPR=()=>Math.min(2,window.devicePixelRatio||1);
+  const coordinate={};
+  function setup(c){
+    const d=DPR(),r=c.getBoundingClientRect();
+    c.width=Math.max(1,Math.round(r.width*d));
+    c.height=Math.max(1,Math.round(r.height*d));
+    const ctx=c.getContext('2d');
+    ctx.setTransform(d,0,0,d,0,0);
+    return{ctx,w:r.width,h:r.height};
+  }
+  function chart(c,opts={}){
+    const {ctx,w,h:height}=setup(c);
+    const left=Math.max(48,Math.min(74,w*.10));
+    const right=Math.max(28,Math.min(52,w*.07));
+    const top=Math.max(74,Math.min(102,height*.24));
+    const bottom=c.id.startsWith('output')?(w<340?145:120):Math.max(48,Math.min(64,height*.145));
+    const x0=left,x1=Math.max(left+20,w-right),y0=top,y1=Math.max(top+20,height-bottom);
+    ctx.clearRect(0,0,w,height);
+    const bg=opts.bg||'#fcfdff';
+    ctx.fillStyle=bg;ctx.fillRect(0,0,w,height);
+    ctx.lineWidth=1;ctx.strokeStyle='#e9eef6';
+    for(let i=0;i<=4;i++){
+      const yy=y0+(y1-y0)*i/4;
+      ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(x1,yy);ctx.stroke();
+      const xx=x0+(x1-x0)*i/4;
+      ctx.beginPath();ctx.moveTo(xx,y0);ctx.lineTo(xx,y1);ctx.stroke();
+    }
+    ctx.strokeStyle='#afbed2';ctx.lineWidth=1.4;
+    ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x0,y1);ctx.lineTo(x1,y1);ctx.stroke();
+    ctx.fillStyle='#8090a9';ctx.font='18px "Segoe UI",Arial,sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='top';
+    for(let i=0;i<=4;i++){
+      const xx=x0+(x1-x0)*i/4;
+      const txt=opts.xlabels?opts.xlabels[i]:String(i);
+      ctx.fillText(txt,xx,y1+12);
+    }
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    if(opts.ylabels){
+      opts.ylabels.forEach((txt,i)=>{
+        const yy=y1-(y1-y0)*i/(opts.ylabels.length-1);
+        ctx.fillText(txt,x0-10,yy);
+      });
+    }
+    return{ctx,x0,x1,y0,y1,pw:x1-x0,ph:y1-y0,w,height};
+  }
+  function drawXTime(t){
+    const p=chart(canvases.inputTime,{bg:'#fcfdff',xlabels:['−16','−8','0','8','16'],ylabels:['0','.5','1']});
+    const{ctx,x0,x1,y0,y1,ph}=p;
+    const base=y1;
+    // 冲激只在敲击后出现，但出现后永久保留其完整数学图形；
+    // 褪去的是额外高亮，不是 δ[n] 本身。
+    if(!hasStruck)return;
+    const top=base-ph*.96;
+    const impulseX=x0+(x1-x0)*.5;
+    ctx.strokeStyle='#c4d0e2';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(x0,base);ctx.lineTo(x1,base);ctx.stroke();
+    ctx.strokeStyle='#9cadd6';ctx.lineWidth=3.2;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(impulseX,base);ctx.lineTo(impulseX,top);ctx.stroke();
+    ctx.fillStyle='#98a9d2';ctx.beginPath();ctx.arc(impulseX,top,5.4,0,2*Math.PI);ctx.fill();
+    // 点击时脉冲短暂发亮；高亮消散后仍有淡色冲激。
+    const flash=t<.016?Math.max(.08,t/.016):Math.exp(-(t-.016)/.42);
+    ctx.save();
+    ctx.globalAlpha=.30*flash;
+    ctx.fillStyle='#ffd179';
+    ctx.beginPath();ctx.arc(impulseX,top,23+8*(1-flash),0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=flash;
+    ctx.strokeStyle='#5977f0';ctx.lineWidth=5.5;
+    ctx.beginPath();ctx.moveTo(impulseX,base);ctx.lineTo(impulseX,top);ctx.stroke();
+    ctx.fillStyle='#e26b9c';ctx.beginPath();ctx.arc(impulseX,top,8.0,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+  function drawXFreq(t){
+    const p=chart(canvases.inputFreq,{bg:'#f8faff',xlabels:['0','π/4','π/2','3π/4','π'],ylabels:['0','.5','1']});
+    const{ctx,x0,x1,y0,ph}=p;
+    if(!hasStruck)return;
+    const yy=y0+ph*.035;
+    ctx.fillStyle='rgba(98,124,229,.035)';ctx.fillRect(x0,yy,x1-x0,p.y1-yy);
+    ctx.strokeStyle='#6576df';ctx.lineWidth=4.2;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(x1,yy);ctx.stroke();
+  }
+  function drawYTime(t){
+    const p=chart(canvases.outputTime,{bg:'#f8faff',xlabels:['0','1.2','2.4','3.6','4.8 s'],ylabels:['-1','0','1']});
+    const{ctx,x0,pw,y0,ph,y1}=p;
+    if(!hasStruck)return;
+    const mid=y0+ph/2;
+    ctx.strokeStyle='#c1cce0';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(x0,mid);ctx.lineTo(x0+pw,mid);ctx.stroke();
+    const show=Math.max(0,Math.min(N,Math.round(N*t/duration)));
+    const widthPx=Math.ceil(pw);
+    const factor=N/pw;
+    ctx.lineCap='butt';ctx.lineWidth=1.8;ctx.strokeStyle='#5369d5';
+    for(let px=0;px<widthPx;px++){
+      const n0=Math.floor(px*factor),n1=Math.min(show,Math.max(n0+1,Math.ceil((px+1)*factor)));
+      if(n0>=show)break;
+      let lo=1,hi=-1;
+      for(let n=n0;n<n1;n++){const v=h[n];if(v<lo)lo=v;if(v>hi)hi=v;}
+      const xx=x0+px;
+      ctx.beginPath();ctx.moveTo(xx,mid-hi*(ph*.465/.8));ctx.lineTo(xx,mid-lo*(ph*.465/.8));ctx.stroke();
+    }
+    const cursor=x0+pw*Math.min(1,t/duration);
+    if(t>0&&t<duration){
+      ctx.strokeStyle='#6b77df';ctx.globalAlpha=.45;ctx.lineWidth=1.3;
+      ctx.beginPath();ctx.moveTo(cursor,y0);ctx.lineTo(cursor,y1);ctx.stroke();ctx.globalAlpha=1;
+    }
+  }
+  function drawYFreq(t){
+    const format=v=>v>=100?Math.round(v).toString():v>=10?v.toFixed(1):v.toFixed(2);
+    const p=chart(canvases.outputFreq,{bg:'#fcfdff',xlabels:['0','π/4','π/2','3π/4','π'],ylabels:['0',format(freqCeiling/2),format(freqCeiling)],bottomExtra:28});
+    const{ctx,x0,pw,y0,ph,y1}=p;
+    if(!hasStruck)return;
+    const idx=t>=duration?spectralSnapshots-1:Math.max(0,Math.min(spectralSnapshots-1,Math.ceil(spectralSnapshots*t/duration)-1));
+    const magnitudes=t<=0?null:spectra[idx];
+    // 16 个明确离散的色阶，颜色只编码频谱幅度。
+    ctx.lineWidth=Math.max(1,pw/frequencyBins+.35);
+    for(let k=0;k<frequencyBins;k++){
+      const v=magnitudes?magnitudes[k]:0;
+      const norm=Math.max(0,Math.min(1,v/maxSpectrum));
+      const paletteIdx=Math.max(0,Math.min(colors.length-1,Math.floor(Math.pow(norm,.54)*colors.length)));
+      const xx=x0+pw*k/(frequencyBins-1);
+      const yy=y1-ph*Math.min(1,v/freqCeiling);
+      ctx.strokeStyle=colors[paletteIdx];
+      ctx.beginPath();ctx.moveTo(xx,y1);ctx.lineTo(xx,yy);ctx.stroke();
+    }
+    ctx.strokeStyle='rgba(78,79,142,.44)';ctx.lineWidth=1.4;
+    ctx.beginPath();
+    for(let k=0;k<frequencyBins;k++){
+      const xx=x0+pw*k/(frequencyBins-1);
+      const yy=y1-ph*Math.min(1,(magnitudes?magnitudes[k]:0)/freqCeiling);
+      if(k===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);
+    }
+    ctx.stroke();
 
-        <!-- 面板2 -->
-        <div class="panel">
-            <div class="panel-title">2. 时域响应 h[n]</div>
-            <canvas id="timeCanvas" width="400" height="300"></canvas>
-            <div class="desc-box">
-                <span class="badge" style="background:#2980b9"></span><b>蓝色波形</b><br>
-                <b>现象：</b>波形震荡并随时间衰减。<br>
-                <b>正确理解：</b>波形的“忽大忽小”（包络变化）是由于多个固有频率相互干涉叠加的结果，这是复杂系统 h[n] 的真实形态。
-            </div>
-        </div>
-
-        <!-- 面板3 -->
-        <div class="panel">
-            <div class="panel-title">3. 频率响应 H(e<sup>jω</sup>)</div>
-            <canvas id="freqCanvas" width="400" height="300"></canvas>
-            <div class="desc-box">
-                <span class="badge" style="background:#c0392b"></span><b>红点</b>：当前频率成分<br>
-                <span class="badge" style="background:rgba(142, 68, 173, 0.3)"></span><b>紫色区域</b>：累积响应曲线<br>
-                随着时域震荡的进行，我们能“扫描”出系统对不同频率（从高频到低频）的放大特性。
-            </div>
-        </div>
-
-    </div>
-
-    <button id="btnStrike">🔊 敲击大钟 (演示开始)</button>
-
-    <script>
-        // --- 绘图上下文 ---
-        const bellCtx = document.getElementById('bellCanvas').getContext('2d');
-        const tCtx = document.getElementById('timeCanvas').getContext('2d');
-        const fCtx = document.getElementById('freqCanvas').getContext('2d');
-        const btn = document.getElementById('btnStrike');
-
-        // --- 全局配置 ---
-        // 动画时长约 6.5 秒
-        const totalDuration = 400; 
-        let isRunning = false;
-        let frameCount = 0;
-
-        // --- 信号参数 ---
-        let startFreq = 0.95; // 初始高频
-        let endFreq = 0.1;    // 结束低频
-        
-        // 两个相位用于制造波形的干涉（拍频）效果
-        let phase1 = 0;
-        let phase2 = 0;
-        
-        // --- 缓冲区 ---
-        let waveBuffer = new Array(400).fill(0);
-        let spectrumHistory = new Array(400).fill(0);
-
-        // --- 物理动画状态 ---
-        let bellShake = 0;
-        let hammerState = 0; 
-
-        // --- 音频引擎 ---
-        let audioCtx = null;
-
-        function playDeepBellSound() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const now = audioCtx.currentTime;
-            
-            // 基础频率：160Hz (较深沉)
-            const fund = 160; 
-
-            // 谐波结构：[倍率, 音量, 持续时长]
-            // 这里使用了复杂的非整数倍泛音，模拟真实金属钟声
-            const harmonics = [
-                [0.5,  0.5, 7.0],  // 次低音
-                [1.0,  1.0, 6.5],  // 基音
-                [1.2,  0.7, 5.0],  // 小三度 (制造悲凉感)
-                [1.5,  0.5, 4.0],  // 五度
-                [2.0,  0.4, 3.0],  // 八度
-                [2.7,  0.2, 1.5],  // 高频金属音
-                [4.2,  0.1, 0.4]   // 瞬间撞击声
-            ];
-
-            harmonics.forEach(h => {
-                createLayeredOscillator(fund * h[0], h[1], h[2], now);
-            });
-        }
-
-        function createLayeredOscillator(freq, peakGain, duration, startTime) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            
-            // 微小的频率偏移制造自然的波动感
-            const detune = (Math.random() - 0.5) * 4; 
-            osc.frequency.value = freq + detune;
-            osc.type = 'sine'; 
-
-            // 包络：瞬间起音，长指数衰减
-            gain.gain.setValueAtTime(0, startTime);
-            gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.02); 
-            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            osc.start(startTime);
-            osc.stop(startTime + duration);
-        }
-
-
-        // --- 绘图逻辑 ---
-
-        function drawBellScene(ctx, shake, hammerAngle) {
-            ctx.clearRect(0, 0, 400, 300);
-            ctx.save();
-            ctx.translate(200, 70); 
-
-            // 横梁
-            ctx.fillStyle = "#444";
-            ctx.fillRect(-140, -15, 280, 20);
-
-            // 震动
-            ctx.save();
-            ctx.translate(0, 25); 
-            ctx.rotate((Math.random()-0.5) * shake * 0.05);
-
-            // --- 钟体 ---
-            ctx.beginPath();
-            ctx.moveTo(0,0);
-            ctx.bezierCurveTo(70, 10, 110, 130, 130, 170); 
-            ctx.lineTo(-130, 170); 
-            ctx.bezierCurveTo(-110, 130, -70, 10, 0, 0); 
-            
-            // 材质：古铜色
-            let grad = ctx.createLinearGradient(-100, 0, 100, 170);
-            grad.addColorStop(0, "#D6C098"); 
-            grad.addColorStop(0.4, "#8C7350"); 
-            grad.addColorStop(1, "#3E2715"); 
-            ctx.fillStyle = grad;
-            ctx.fill();
-
-            // 纹理
-            ctx.strokeStyle = "rgba(0,0,0,0.15)";
-            ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(-70, 60); ctx.lineTo(70, 60); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(-100, 120); ctx.lineTo(100, 120); ctx.stroke();
-            
-            // 钟摆
-            ctx.beginPath(); ctx.arc(0, 170, 20, 0, Math.PI*2);
-            ctx.fillStyle = "#111"; ctx.fill();
-
-            ctx.restore(); 
-            ctx.restore(); 
-
-            // 锤子
-            ctx.save();
-            ctx.translate(340, 170); 
-            ctx.rotate(hammerAngle);
-            ctx.fillStyle = "#5D4037"; ctx.fillRect(-12, -110, 24, 110);
-            ctx.fillStyle = "#222"; 
-            ctx.beginPath(); ctx.roundRect(-35, -120, 70, 45, 10); ctx.fill();
-            ctx.restore();
-        }
-
-        function drawTimeDomain(ctx) {
-            ctx.clearRect(0,0,400,300);
-            
-            // 坐标轴
-            ctx.strokeStyle = "#999"; 
-            ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(40,150); ctx.lineTo(380,150); ctx.stroke(); // X
-            ctx.beginPath(); ctx.moveTo(40,150); ctx.lineTo(40,30); ctx.stroke();   // Y (幅度)
-            
-            // 文字
-            ctx.fillStyle = "#333";
-            ctx.font = "bold 16px Arial";
-            ctx.fillText("n (时间)", 340, 175);
-            ctx.fillText("幅度", 10, 40);
-
-            // 波形
-            ctx.beginPath();
-            ctx.strokeStyle = "#2980b9";
-            ctx.lineWidth = 2;
-            for(let i=0; i<waveBuffer.length; i++) {
-                // 绘制 buffer，水平拉伸以填满画布
-                let x = 40 + (i / waveBuffer.length) * 340;
-                let y = 150 - waveBuffer[i] * 1.5;
-                if(i===0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.stroke();
-        }
-
-        function drawFreqDomain(ctx) {
-            ctx.clearRect(0,0,400,300);
-
-            // 坐标轴
-            ctx.strokeStyle = "#333";
-            ctx.lineWidth = 2;
-            ctx.beginPath(); 
-            ctx.moveTo(50, 260); ctx.lineTo(380, 260); // X轴
-            ctx.moveTo(50, 260); ctx.lineTo(50, 20);   // Y轴
-            ctx.stroke();
-            
-            // 刻度文字
-            ctx.fillStyle = "#333";
-            ctx.font = "bold 16px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("0", 50, 285);
-            ctx.fillText("π (频率 ω)", 360, 285);
-            
-            ctx.save();
-            ctx.translate(20, 140);
-            ctx.rotate(-Math.PI/2);
-            ctx.fillText("|H|", 0, 0);
-            ctx.restore();
-
-            // 历史曲线 (平滑)
-            ctx.beginPath();
-            ctx.moveTo(50, 260);
-            for(let i=0; i<spectrumHistory.length; i++) {
-                let x = 50 + (i/spectrumHistory.length) * 330;
-                let y = 260 - spectrumHistory[i] * 1.5;
-                ctx.lineTo(x, y);
-            }
-            ctx.lineTo(380, 260);
-            ctx.fillStyle = "rgba(142, 68, 173, 0.25)"; 
-            ctx.fill();
-            ctx.strokeStyle = "#8e44ad";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // 当前红点
-            if (isRunning) {
-                let progress = frameCount / totalDuration;
-                if(progress > 1) progress = 1;
-                
-                let currFreq = startFreq + (endFreq - startFreq) * progress;
-                let cx = 50 + currFreq * 330;
-                let amp = 100 * Math.exp(-2.5 * progress); 
-                let cy = 260 - amp * 1.5;
-
-                if (amp > 1) {
-                    // 点
-                    ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI*2);
-                    ctx.fillStyle = "#c0392b"; ctx.fill();
-                    // 虚线
-                    ctx.beginPath(); ctx.moveTo(cx, 260); ctx.lineTo(cx, cy);
-                    ctx.strokeStyle = "#c0392b"; 
-                    ctx.lineWidth = 1;
-                    ctx.setLineDash([5,5]); ctx.stroke(); ctx.setLineDash([]);
-                }
-            }
-        }
-
-        // --- 主循环 ---
-        function loop() {
-            // 1. 锤子动画
-            let hammerAngle = Math.PI/4;
-            if (hammerState === 1) { 
-                let p = (frameCount % 10) / 10;
-                hammerAngle = Math.PI/4 - p*0.8; 
-                frameCount++;
-                if (frameCount > 8) {
-                    hammerState = 2;
-                    isRunning = true;
-                    frameCount = 0;
-                    bellShake = 25; 
-                    playDeepBellSound();
-                }
-            } else if (hammerState === 2) { 
-                 hammerAngle = Math.PI/4;
-            }
-
-            // 2. 信号计算
-            if (isRunning) {
-                frameCount++;
-                let progress = frameCount / totalDuration;
-
-                if (progress <= 1.0) {
-                    // --- h[n] 视觉波形生成 (修正版) ---
-                    // 使用双频率叠加来制造“干涉”效果，看起来更真实
-                    let freqBase = startFreq + (endFreq - startFreq) * progress;
-                    
-                    // 模拟能量指数衰减
-                    let env = 90 * Math.exp(-2.8 * progress);
-                    
-                    // 相位累加 (两个略微不同的频率)
-                    phase1 += freqBase * 0.5;
-                    phase2 += freqBase * 0.55; // 第二个频率稍快，产生拍频
-                    
-                    // h[n] = 两个波的叠加
-                    let val = env * (Math.sin(phase1) + 0.6 * Math.sin(phase2));
-                    
-                    waveBuffer.shift(); waveBuffer.push(val);
-
-                    // --- 频谱晕染 ---
-                    let centerIdx = Math.floor(freqBase * 400);
-                    let brushWidth = 25; 
-                    
-                    for (let k = -brushWidth; k <= brushWidth; k++) {
-                        let idx = centerIdx + k;
-                        if (idx >= 0 && idx < 400) {
-                            let weight = Math.exp(-(k*k)/(2*20)); 
-                            let paintVal = env * weight;
-                            if (paintVal > spectrumHistory[idx]) {
-                                spectrumHistory[idx] = paintVal;
-                            }
-                        }
-                    }
-
-                    bellShake *= 0.98; 
-
-                } else {
-                    isRunning = false;
-                    btn.disabled = false;
-                    btn.innerText = "🔊 敲击大钟 (演示开始)";
-                    hammerState = 0;
-                }
-            }
-
-            drawBellScene(bellCtx, bellShake, hammerAngle);
-            drawTimeDomain(tCtx);
-            drawFreqDomain(fCtx);
-
-            requestAnimationFrame(loop);
-        }
-
-        // --- 交互 ---
-        btn.onclick = () => {
-            isRunning = false;
-            hammerState = 1;
-            frameCount = 0;
-            phase1 = 0;
-            phase2 = 0;
-            waveBuffer.fill(0);
-            spectrumHistory.fill(0);
-            btn.disabled = true;
-            btn.innerText = "演示进行中...";
-        };
-
-        loop();
-
-    </script>
+  }
+  const bell=document.getElementById('strike');
+  const move=document.getElementById('bellMove');
+  const striker=document.getElementById('striker');
+  const ring=document.getElementById('ripples');
+  const hint=document.getElementById('hint');
+  const circles=[];
+  for(let i=0;i<3;i++){
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx','150');c.setAttribute('cy','150');c.setAttribute('r',String(88+i*20));
+    ring.appendChild(c);circles.push(c);
+  }
+  function drawBell(t){
+    let a=0;
+    if(t>0&&t<duration){
+      a=8.2*Math.exp(-t*1.30)*Math.sin(2*Math.PI*4.2*t);
+    }
+    move.setAttribute('transform',`rotate(${a.toFixed(3)} 150 150)`);
+    const impact=Math.max(0,Math.min(1,t/.085));
+    const hammerX=t<=.085?24*impact:24*Math.exp(-(t-.085)*11);
+    striker.setAttribute('transform',`translate(${hammerX.toFixed(2)} 0)`);
+    circles.forEach((c,i)=>{
+      const phase=(t*.85-i*.29)%1;
+      c.setAttribute('r',String(75+phase*72));
+      c.setAttribute('opacity',String(t<=0?.0:Math.max(0,(1-phase)*Math.exp(-t*.95)*.40)));
+    });
+  }
+  let ctxAudio=null,buffer=null,source=null;
+  let running=false,startedAt=0,elapsedSec=0,hasStruck=false;
+  async function strike(){
+    try{
+      if(!ctxAudio)ctxAudio=new(window.AudioContext||window.webkitAudioContext)();
+      await ctxAudio.resume();
+      if(!buffer){
+        buffer=ctxAudio.createBuffer(1,h.length,sampleRate);
+        buffer.getChannelData(0).set(h);
+      }
+      if(source){try{source.stop()}catch(_){}}
+      source=ctxAudio.createBufferSource();
+      source.buffer=buffer;source.connect(ctxAudio.destination);source.start(0);
+    }catch(e){console.warn('Audio blocked:',e)}
+    startedAt=performance.now();
+    hasStruck=true;
+    elapsedSec=0;
+    running=true;
+    hint.textContent='↻';
+  }
+  bell.addEventListener('click',strike);
+  document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();strike()}});
+  let screenW=0,screenH=0;
+  function draw(t){
+    drawXTime(t);drawXFreq(t);drawYTime(t);drawYFreq(t);drawBell(t);
+  }
+  function redraw(){
+    screenW=window.innerWidth;screenH=window.innerHeight;
+    draw(elapsedSec);
+  }
+  window.addEventListener('resize',redraw,{passive:true});
+  function animate(now){
+    if(running){
+      elapsedSec=Math.min(duration,Math.max(0,(now-startedAt)/1000));
+      if(elapsedSec>=duration){running=false;hint.textContent='↻'}
+      draw(elapsedSec);
+    }
+    requestAnimationFrame(animate);
+  }
+  draw(0);
+  requestAnimationFrame(animate);
+})();
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920" integrity="sha512-L0ha0OXavK/8okipN9F8BtP84dg9DUhPERbBXzwI6dgTA55d2+yweo3pn5CSFYs45/r8md2+xvUPtTdvTNRfjA==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
